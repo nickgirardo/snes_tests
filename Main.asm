@@ -7,30 +7,18 @@
 .define palette_size $60
 
 .org palette
-.db $1F, $2F, $3F, $4F
-.db $5F, $6F, $7F, $8F
-.db $97, $A7, $B7, $C7
-.db $D7, $E7, $F7, $07
-.db $13, $23, $33, $43
-.db $53, $63, $73, $83
-.db $90, $A0, $B0, $C0
-.db $D0, $E0, $F0, $00
-.db $1F, $2F, $3F, $4F
-.db $5F, $6F, $7F, $8F
-.db $9F, $AF, $BF, $CF
-.db $DF, $EF, $FF, $0F
-.db $1F, $2F, $3F, $4F
-.db $5F, $6F, $7F, $8F
-.db $9F, $AF, $BF, $CF
-.db $DF, $EF, $FF, $0F
-.db $1F, $2F, $3F, $4F
-.db $5F, $6F, $7F, $8F
-.db $9F, $AF, $BF, $CF
-.db $DF, $EF, $FF, $0F
-.db $1F, $2F, $3F, $4F
-.db $5F, $6F, $7F, $8F
-.db $9F, $AF, $BF, $CF
-.db $DF, $EF, $FF, $0F
+.dw $0000, $6000, $7FFF, $0018
+.dw $97A7, $B7C7, $D7E7, $F707
+.dw $1323, $3343, $5363, $7383
+.dw $90A0, $B0C0, $D0E0, $F000
+.dw $1F2F, $3F4F, $5F6F, $7F8F
+.dw $9FAF, $BFCF, $DFEF, $FF0F
+.dw $1F2F, $3F4F, $5F6F, $7F8F
+.dw $9FAF, $BFCF, $DFEF, $FF0F
+.dw $1F2F, $3F4F, $5F6F, $7F8F
+.dw $9FAF, $BFCF, $DFEF, $FF0F
+.dw $1F2F, $3F4F, $5F6F, $7F8F
+.dw $9FAF, $BFCF, $DFEF, $FF0F
 
 .define tilemap $A0
 .define tilemap_rom tilemap+$8000
@@ -84,40 +72,12 @@
 
 .define text $1800
 .define text_rom text+$8000
-.define text_size  $0200
+.define text_size  $0800
 
 .org text
-.dw $0000 $0001 $0002 $0003 $0004 $0005 $0006 $0007 $0008 $0009 $000a $000b $000c $000d $000e $000f
-.dw $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080
-.dw $0010 $0011 $0012 $0013 $0014 $0015 $0016 $0017 $0018 $0019 $001a $001b $001c $001d $001e $001f
-.dw $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080
-.dw $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080
-.dw $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080
-.dw $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080
-.dw $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080
-.dw $0000 $0001 $0002 $0003 $0004 $0005 $0006 $0007 $0008 $0009 $000a $000b $000c $000d $000e $000f
-.dw $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080
-.dw $0010 $0011 $0012 $0013 $0014 $0015 $0016 $0017 $0018 $0019 $001a $001b $001c $001d $001e $001f
-.dw $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080
-.dw $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080
-.dw $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080
-.dw $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080
-.dw $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080
+.include "text/Test.inc"
 
 VBlank:
-
-    ; Cycle through all colors for background
-    ; Test to make sure this is VBlank and we can access VRAM here
-    rep #$20
-    lda $020000
-    inc a
-    sta $020000
-    sep #$20
-
-    SetupPaletteDMA 0 0 2 0 2
-    lda	#$01
-    sta	$420b
-
     RTI
 
 Start:
@@ -137,6 +97,13 @@ Start:
     lda #$09
     sta $2105
 
+    ; Enable layers for mainscreen
+    ; Format: 000o 4321
+    ; Where o is objects, 4321 are each bg
+    ; In this case, only enabling bg 1 and 3
+    lda #%00000101
+    sta $212c
+
     ; Background 1 and 2 locations in VRAM
     ; Currently bg 1 at $2000, bg 2 at 0
     lda #$01
@@ -147,8 +114,15 @@ Start:
     lda #$02
     sta $210c
 
+    ; Background 3 address and size
+    ; Format: aaaa aabb
+    ; a = Top 6 bits bg address
+    ; b = BG size (00 = 32x32)
     lda #$04
     sta $2109
+
+    ; BG 3 Scroll V-Offset
+    stz $2112
 
     SetupPaletteDMA 0 palette_rom 0 0 palette_size
     SetupVramDMA 1 tilemap_rom 0 0 tilemap_size
@@ -171,7 +145,7 @@ Start:
     lda	#$01
     sta	$420b
 
-    SetupVramDMA 0 text_rom 0 $0800 text_size
+    SetupVramDMA 0 text_rom 0 $0400 text_size
 
     ; Start the transfer, bit one for channel 0
     lda	#$01
