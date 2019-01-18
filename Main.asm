@@ -2,12 +2,11 @@
 .include "include/Snes_Init.asm"
 .include "include/Util.asm"
 
-.define palette_rom $40 
-.define palette $00 
-.define palette_bank $02
+.define palette $40
+.define palette_rom palette+$8000
 .define palette_size $60
 
-.org palette_rom
+.org palette
 .db $1F, $2F, $3F, $4F
 .db $5F, $6F, $7F, $8F
 .db $97, $A7, $B7, $C7
@@ -33,12 +32,11 @@
 .db $9F, $AF, $BF, $CF
 .db $DF, $EF, $FF, $0F
 
-.define tilemap_rom $A0 
-.define tilemap $60 
-.define tilemap_bank $02
+.define tilemap $A0
+.define tilemap_rom tilemap+$8000
 .define tilemap_size $20
 
-.org tilemap_rom
+.org tilemap
 .db $00, $00
 .db $01, $00
 .db $02, $00
@@ -56,12 +54,11 @@
 .db $02, $0c
 .db $03, $0c
 
-.define char_rom $C0 
-.define char $80
-.define char_bank $02
+.define char $C0
+.define char_rom char+$8000
 .define char_size $40
 
-.org char_rom
+.org char
 .db $00, $00, $00, $00, $00, $00, $00, $00
 .db $00, $00, $00, $00, $00, $00, $00, $00
 .db $ab, $ab, $ab, $ab, $ab, $ab, $ab, $ab
@@ -81,7 +78,7 @@ VBlank:
     sta $020000
     sep #$20
 
-    SetupPaletteDMA 0 palette palette_bank 0 2
+    SetupPaletteDMA 0 0 2 0 2
     lda	#$01
     sta	$420b
 
@@ -101,12 +98,8 @@ Start:
     lda #$01
     sta $210b
 
-    CopyRomToRam palette_rom palette_bank palette palette_size
-    CopyRomToRam tilemap_rom tilemap_bank tilemap tilemap_size
-    CopyRomToRam char_rom char_bank char char_size
-
-    SetupPaletteDMA 0 palette palette_bank 0 palette_size
-    SetupVramDMA 1 tilemap tilemap_bank 0 tilemap_size
+    SetupPaletteDMA 0 palette_rom 0 0 palette_size
+    SetupVramDMA 1 tilemap_rom 0 0 tilemap_size
 
     ; Start the transfers
     ; Enabling the first two bits corresponds to the first two channels
@@ -114,7 +107,7 @@ Start:
     lda	#%00000011
     sta	$420b
 
-    SetupVramDMA 0 char char_bank $1000 char_size
+    SetupVramDMA 0 char_rom 0 $1000 char_size
 
     ; Start the transfer, bit one for channel 0
     lda	#$01
