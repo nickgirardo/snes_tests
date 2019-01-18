@@ -56,17 +56,53 @@
 
 .define char $C0
 .define char_rom char+$8000
-.define char_size $40
+.define char_size $80
 
 .org char
 .db $00, $00, $00, $00, $00, $00, $00, $00
 .db $00, $00, $00, $00, $00, $00, $00, $00
+.db $00, $00, $00, $00, $00, $00, $00, $00
+.db $00, $00, $00, $00, $00, $00, $00, $00
 .db $ab, $ab, $ab, $ab, $ab, $ab, $ab, $ab
+.db $ab, $ab, $ab, $ab, $ab, $ab, $ab, $ab
+.db $ab, $ab, $ab, $ab, $ab, $ab, $ab, $ab
+.db $ab, $ab, $ab, $ab, $ab, $ab, $ab, $ab
+.db $75, $75, $75, $75, $ab, $ab, $ab, $ab
 .db $ab, $ab, $ab, $ab, $ab, $ab, $ab, $ab
 .db $75, $75, $75, $75, $ab, $ab, $ab, $ab
 .db $ab, $ab, $ab, $ab, $75, $75, $75, $75
 .db $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff
 .db $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff
+.db $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff
+.db $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff
+
+.define typeface $1000
+.define typeface_rom typeface+$8000
+.define typeface_size  $0800
+
+.include "include/Typeface.inc"
+
+.define text $1800
+.define text_rom text+$8000
+.define text_size  $0200
+
+.org text
+.dw $0000 $0001 $0002 $0003 $0004 $0005 $0006 $0007 $0008 $0009 $000a $000b $000c $000d $000e $000f
+.dw $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080
+.dw $0010 $0011 $0012 $0013 $0014 $0015 $0016 $0017 $0018 $0019 $001a $001b $001c $001d $001e $001f
+.dw $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080
+.dw $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080
+.dw $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080
+.dw $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080
+.dw $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080
+.dw $0000 $0001 $0002 $0003 $0004 $0005 $0006 $0007 $0008 $0009 $000a $000b $000c $000d $000e $000f
+.dw $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080
+.dw $0010 $0011 $0012 $0013 $0014 $0015 $0016 $0017 $0018 $0019 $001a $001b $001c $001d $001e $001f
+.dw $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080
+.dw $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080
+.dw $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080
+.dw $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080
+.dw $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080 $0080
 
 VBlank:
 
@@ -95,8 +131,24 @@ Start:
     lda #%10000000
     sta $2100
 
+    ; Setting PPU Properties
+    ; Set bg mode, tilesize, bg 3 priority
+    ; Mode 1, all 8x8, bg 3 high priority
+    lda #$09
+    sta $2105
+
+    ; Background 1 and 2 locations in VRAM
+    ; Currently bg 1 at $2000, bg 2 at 0
     lda #$01
     sta $210b
+
+    ; Background 3 location in VRAM
+    ; Currently bg 1 at $4000
+    lda #$02
+    sta $210c
+
+    lda #$04
+    sta $2109
 
     SetupPaletteDMA 0 palette_rom 0 0 palette_size
     SetupVramDMA 1 tilemap_rom 0 0 tilemap_size
@@ -108,6 +160,18 @@ Start:
     sta	$420b
 
     SetupVramDMA 0 char_rom 0 $1000 char_size
+
+    ; Start the transfer, bit one for channel 0
+    lda	#$01
+    sta	$420b
+
+    SetupVramDMA 0 typeface_rom 0 $2000 typeface_size
+
+    ; Start the transfer, bit one for channel 0
+    lda	#$01
+    sta	$420b
+
+    SetupVramDMA 0 text_rom 0 $0800 text_size
 
     ; Start the transfer, bit one for channel 0
     lda	#$01
