@@ -78,6 +78,13 @@
 .include "text/Test.inc"
 
 VBlank:
+
+    lda $020000
+    inc a
+    sta $020000
+    lsr
+    lsr
+    sta $2112
     RTI
 
 Start:
