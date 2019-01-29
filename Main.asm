@@ -42,28 +42,6 @@
 .db $02, $0c
 .db $03, $0c
 
-.define char $C0
-.define char_rom char+$8000
-.define char_size $80
-
-.org char
-.db $00, $00, $00, $00, $00, $00, $00, $00
-.db $00, $00, $00, $00, $00, $00, $00, $00
-.db $00, $00, $00, $00, $00, $00, $00, $00
-.db $00, $00, $00, $00, $00, $00, $00, $00
-.db $ab, $ab, $ab, $ab, $ab, $ab, $ab, $ab
-.db $ab, $ab, $ab, $ab, $ab, $ab, $ab, $ab
-.db $ab, $ab, $ab, $ab, $ab, $ab, $ab, $ab
-.db $ab, $ab, $ab, $ab, $ab, $ab, $ab, $ab
-.db $75, $75, $75, $75, $ab, $ab, $ab, $ab
-.db $ab, $ab, $ab, $ab, $ab, $ab, $ab, $ab
-.db $75, $75, $75, $75, $ab, $ab, $ab, $ab
-.db $ab, $ab, $ab, $ab, $75, $75, $75, $75
-.db $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff
-.db $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff
-.db $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff
-.db $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff
-
 .define typeface $1000
 .define typeface_rom typeface+$8000
 .define typeface_size  $0800
@@ -72,19 +50,71 @@
 
 .define text $1800
 .define text_rom text+$8000
-.define text_size  $0800
+.define text_size  $0e00
 
 .org text
 .include "text/Test.inc"
 
+.enum $020000
+ts_space_char dw
+ts_cpu_offset dw
+ts_vram_offset dw
+ts_frames_since_move db
+ts_lines_moved db
+ts_next_line db
+.ende
+
 VBlank:
 
-    lda $020000
+    .define text_speed $04
+    .define line_width $40
+    lda ts_lines_moved
+    tay
+    lda ts_frames_since_move
     inc a
-    sta $020000
+    cmp #text_speed
+    bne somewhere
+    lda #$00
+    iny
+
+somewhere:
+    sta ts_frames_since_move
+    sty $2112
+
+    tya
+    sta ts_lines_moved
+
+    cmp ts_next_line
+    bne end
+
+    rep #$01
+    lda ts_next_line
+    adc #$08
+    sta ts_next_line
+
+    SetupVramDMA 0 text_rom 0 $0400 line_width ts_cpu_offset ts_vram_offset
+
+    ; Start the transfer, bit one for channel 0
+    lda	#$01
+    sta	$420b
+
+    ; 16 bit acc
+    rep #$20
+    lda ts_cpu_offset
+
+    ; Clear carry
+    rep #$01
+    adc #line_width
+    sta ts_cpu_offset
+
+    ; VRAM offset is half of the cpu offset
     lsr
-    lsr
-    sta $2112
+    and #$fbf0
+    sta ts_vram_offset
+    sep #$20
+
+
+end:
     RTI
 
 Start:
@@ -98,39 +128,6 @@ Start:
     lda #%10000000
     sta $2100
 
-    ; Setting PPU Properties
-    ; Set bg mode, tilesize, bg 3 priority
-    ; Mode 1, all 8x8, bg 3 high priority
-    lda #$09
-    sta $2105
-
-    ; Enable layers for mainscreen
-    ; Format: 000o 4321
-    ; Where o is objects, 4321 are each bg
-    ; In this case, only enabling bg 1 and 3
-    lda #%00000101
-    sta $212c
-
-    ; Background 1 and 2 locations in VRAM
-    ; Currently bg 1 at $2000, bg 2 at 0
-    lda #$01
-    sta $210b
-
-    ; Background 3 location in VRAM
-    ; Currently bg 1 at $4000
-    lda #$02
-    sta $210c
-
-    ; Background 3 address and size
-    ; Format: aaaa aabb
-    ; a = Top 6 bits bg address
-    ; b = BG size (00 = 32x32)
-    lda #$04
-    sta $2109
-
-    ; BG 3 Scroll V-Offset
-    stz $2112
-
     SetupPaletteDMA 0 palette_rom 0 0 palette_size
     SetupVramDMA 1 tilemap_rom 0 0 tilemap_size
 
@@ -140,23 +137,40 @@ Start:
     lda	#%00000011
     sta	$420b
 
-    SetupVramDMA 0 char_rom 0 $1000 char_size
-
-    ; Start the transfer, bit one for channel 0
-    lda	#$01
-    sta	$420b
-
     SetupVramDMA 0 typeface_rom 0 $2000 typeface_size
 
     ; Start the transfer, bit one for channel 0
     lda	#$01
     sta	$420b
 
-    SetupVramDMA 0 text_rom 0 $0400 text_size
+    ; lines done count
+    lda #$00
+    sta ts_frames_since_move
+    sta ts_lines_moved
+
+    ; Next dma line
+    lda #$08
+    sta ts_next_line
+
+    rep #$20
+    lda #$0000
+    ; cpu offset
+    sta ts_cpu_offset
+    ; vram offset
+    sta ts_vram_offset
+
+    lda #$0080
+    sta ts_space_char
+
+    sep #$20
+
+    ; TODO hardcoded for now, fix later
+    msetVramDMA 0 $0000 2 $0400 text_size
 
     ; Start the transfer, bit one for channel 0
     lda	#$01
     sta	$420b
+
 
     ; End FBlank, set brightness to 15 (100%)
     lda #%00001111
@@ -164,6 +178,7 @@ Start:
 
     lda #$80
     sta $4200       ; Enable NMI
+
 
     ; Loop forever.
 Forever:
