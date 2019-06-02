@@ -60,15 +60,19 @@ ts_space_char dw
 ts_cpu_offset dw
 ts_vram_offset dw
 ts_frames_since_move db
-ts_lines_moved db
+ts_scanlines_moved db ; Scanlines traversed
 ts_next_line db
+ts_textlines_moved db ; Count lines of text which have been sent to vram
 .ende
+
+.define ts_total_lines $38
 
 VBlank:
 
     .define text_speed $04
     .define line_width $40
-    lda ts_lines_moved
+
+    lda ts_scanlines_moved
     tay
     lda ts_frames_since_move
     inc a
@@ -82,10 +86,19 @@ somewhere:
     sty $2112
 
     tya
-    sta ts_lines_moved
+    sta ts_scanlines_moved
 
     cmp ts_next_line
     bne end
+
+    ; Count the total lines of text we've transferred
+    lda ts_textlines_moved
+    rep #$01
+    inc a
+    sta ts_textlines_moved
+
+    cmp #ts_total_lines
+    beq end
 
     rep #$01
     lda ts_next_line
@@ -146,7 +159,8 @@ Start:
     ; lines done count
     lda #$00
     sta ts_frames_since_move
-    sta ts_lines_moved
+    sta ts_scanlines_moved
+    sta ts_textlines_moved
 
     ; Next dma line
     lda #$08
