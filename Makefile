@@ -1,10 +1,9 @@
+TOPTARGETS := all clean
 
-build/Main.smc: Main.asm Main.link include/*.asm include/*.inc text/*.inc
-	if [ ! -d "build" ]; then mkdir build; fi
-	wla-65816 -v -o build/Main.obj Main.asm
-	wlalink -v -r Main.link build/Main.smc
+SUBDIRS := $(wildcard */.)
 
-.PHONY: clean
-clean:
-	rm -r build
+$(TOPTARGETS): $(SUBDIRS)
+$(SUBDIRS):
+	$(MAKE) -C $@ $(MAKECMDGOALS)
 
+.PHONY: $(TOPTARGETS) $(SUBDIRS)
