@@ -4,15 +4,11 @@
 
 .define palette $40
 .define palette_rom palette+$8000
-.define palette_size $40
+.define palette_size $20
 
 .org palette
-.dw $0000, $6000, $7FFF, $0018
-.dw $97A7, $B7C7, $D7E7, $F707
 .dw $0000, $ff7f, $7e23, $b711
 .dw $9e36, $a514, $ff01, $7810
-.dw $0000, $ff7f, $1f5a, $aa55
-.dw $b276, $a514, $df2a, $187a
 
 .define sprite_fairy $1000
 .define sprite_fairy_rom sprite_fairy+$8000
@@ -20,19 +16,24 @@
 
 .include "include/Sprites/Fairy.inc"
 
-; Not doing anything in vblank
 VBlank:
+    ; Our fairy sprite is stored at the first spot in oam
     stz $2102
     stz $2103
 
+    ; Reading twice gets x and y pos
     lda $2138
     ldy $2138
+
+    ; Increment each
     inc a
     iny
 
+    ; Reset our read/ write address to first spot
     stz $2102
     stz $2103
 
+    ; Update x and y values
     sta $2104
     sty $2104
 
@@ -51,7 +52,7 @@ Start:
     sta $2100
 
     SetupVramDMA 0 sprite_fairy_rom 0 $4000 sprite_fairy_size
-    SetupPaletteDMA 1 palette_rom 0 $80 palette_size
+    SetupPaletteDMA 1 palette_rom 0 $90 palette_size
 
     ; Start the transfers
     ; Enabling the first two bits corresponds to the first two channels
@@ -65,15 +66,27 @@ Start:
     lda	#$01
     sta	$420b
 
+    ; Setting up our sprite at first spot in oam
     stz $2102
     stz $2103
 
+    ; Starting x = $30
     lda #$30
     sta $2104
+    ; Starting y = $57
     lda #$57
     sta $2104
+    ; Tile number = 0
     lda #$00
     sta $2104
+    ; Object attributes
+    ; vhoopppn
+    ; v = vertical flip
+    ; h = horizontal flip
+    ; o = priority
+    ; p = palette
+    ; n = Name table (i.e. msb of tile)
+    ; Here I am setting priority, horizontal flip, palette = 1
     lda #%01110010
     sta $2104
 
@@ -82,6 +95,10 @@ Start:
     lda #01
     sta $2103
 
+    ; Setting sprite size/ msb of x
+    ; If sprite size = 0, sprite is 8x8
+    ; If sprite size = 1, sprite is 16x16
+    ; Here I set sprite size = 1, msb x = 0
     lda #$02
     sta $2104
 
