@@ -94,8 +94,8 @@ Init:
     ; Enable layers for mainscreen
     ; Format: 000o 4321
     ; Where o is objects, 4321 are each bg
-    ; In this case, only enabling bg 1 and 3
-    lda #%00010101
+    ; In this case, only enabling object layer
+    lda #%00010000
     sta $212c
     stz 	$212D   ; Sub Screen designation
     stz 	$212E   ; Window mask for Main Screen
