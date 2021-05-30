@@ -16,6 +16,11 @@
 
 .include "include/Sprites/Fairy.inc"
 
+; Physics constants
+.define fairy_maxv  $0300
+.define fairy_speed $40
+.define fairy_fric  $18
+
 ; Memory addresses
 .define vblank_done $0000
 
@@ -36,6 +41,8 @@
 .define fairy_vy    $0010
 .define fairy_vyl   $0010
 .define fairy_vyh   $0011
+
+.define fairy_attr  $0012
 
 VBlank:
     lda fairy_xh
@@ -73,7 +80,7 @@ Start:
     stz fairy_xl
 
     lda #$75
-    sta fairy_y
+    sta fairy_yh
     stz fairy_yl
 
     stz fairy_vxh
@@ -81,6 +88,17 @@ Start:
 
     stz fairy_vyh
     stz fairy_vyl
+
+    ; Fairy attributes
+    ; vhoopppn
+    ; v = vertical flip
+    ; h = horizontal flip
+    ; o = priority
+    ; p = palette
+    ; n = Name table (i.e. msb of tile)
+    ; Here I am setting priority, horizontal flip, palette = 1
+    lda #%01110010
+    sta fairy_attr
 
     SetupVramDMA 0 sprite_fairy_rom 0 $4000 sprite_fairy_size
     SetupPaletteDMA 1 palette_rom 0 $90 palette_size
@@ -111,14 +129,7 @@ Start:
     lda #$00
     sta $2104
     ; Object attributes
-    ; vhoopppn
-    ; v = vertical flip
-    ; h = horizontal flip
-    ; o = priority
-    ; p = palette
-    ; n = Name table (i.e. msb of tile)
-    ; Here I am setting priority, horizontal flip, palette = 1
-    lda #%01110010
+    lda fairy_attr
     sta $2104
 
     lda #00
@@ -184,7 +195,7 @@ ControllerAutoReadWait:
     rts
 
 
-; TODO define physics constants instead of using magic numbers
+; TODO bounce off walls
 DoPhysics:
     ACC16
 
@@ -198,14 +209,15 @@ DoPhysics:
     and #%00000010
     beq YMovement
 
+    ; TODO flip fairy sprite here
 P1LeftDown:
     lda fairy_vx
-    sbc #$8
+    sbc #fairy_speed
     sta fairy_vx
     bra YMovement
 P1RightDown:
     lda fairy_vx
-    adc #$8
+    adc #fairy_speed
     sta fairy_vx
 
 YMovement:
@@ -217,19 +229,115 @@ YMovement:
     ; Check if up is pressed
     lda p1_control_l
     and #%00001000
-    beq AddVelocities
+    beq CalcFriction
 
 P1UpDown:
     lda fairy_vy
-    sbc #$8
+    sbc #fairy_speed
     sta fairy_vy
-    bra AddVelocities
+    bra CalcFriction
 P1DownDown:
     lda fairy_vy
-    adc #$8
+    adc #fairy_speed
     sta fairy_vy
 
-    ; TODO Calculate friction
+CalcFriction:
+    ;Starting with x friction first
+    lda fairy_vx
+    bmi MovingLeft
+MovingRight:
+    ; Check against max vel
+    sbc #fairy_maxv
+    ; If this is negative, we are slower than max velocity
+    bmi FrictionRight
+    ; Otherwise we cap it here
+    lda #fairy_maxv
+    sta fairy_vx
+
+FrictionRight:
+    ; Subtract friction constant from velocity
+    lda fairy_vx
+    sbc #fairy_fric
+    sta fairy_vx
+    ; If this value is still positive we are fine
+    bpl FrictionY
+
+    ; Otherwise we've turned the positive value negative
+    ; So we'll zero it here
+    stz fairy_vx
+    bra FrictionY
+
+MovingLeft:
+    ; Check against max vel
+    adc #fairy_maxv
+    ; If this is positive, we are slower than max velocity
+    bpl FrictionLeft
+    ; Otherwise we cap it here
+    lda #-fairy_maxv
+    sta fairy_vx
+
+FrictionLeft:
+    ; Add friction constant to velocity
+    lda fairy_vx
+    adc #fairy_fric
+    sta fairy_vx
+    ; If this value is still negative we are fine
+    bmi FrictionY
+
+    ; Otherwise we've turned the negative value positive
+    ; So we'll zero it here
+    stz fairy_vx
+    bra FrictionY
+
+    ; Done with the x friction, lets do the y friction now
+FrictionY:
+    lda fairy_vy
+    bmi MovingUp
+MovingDown:
+    ; Check against max vel
+    sbc #fairy_maxv
+    ; If this is negative, we are slower than max velocity
+    bmi FrictionDown
+    ; Otherwise we cap it here
+    lda #fairy_maxv
+    sta fairy_vy
+
+FrictionDown:
+    ; Subtract friction constant from velocity
+    lda fairy_vy
+    sbc #fairy_fric
+    sta fairy_vy
+    ; If this value is still positive we are fine
+    bpl AddVelocities
+
+    ; Otherwise we've turned the positive value negative
+    ; So we'll zero it here
+    stz fairy_vy
+    bra AddVelocities
+
+MovingUp:
+    ; Check against max vel
+    adc #fairy_maxv
+    ; If this is positive, we are slower than max velocity
+    bpl FrictionUp
+    ; Otherwise we cap it here
+    lda #-fairy_maxv
+    sta fairy_vy
+
+FrictionUp:
+    ; Add friction constant to velocity
+    lda fairy_vy
+    adc #fairy_fric
+    sta fairy_vy
+    ; If this value is still negative we are fine
+    bmi AddVelocities
+
+    ; Otherwise we've turned the negative value positive
+    ; So we'll zero it here
+    stz fairy_vy
+    bra AddVelocities
+
+
 AddVelocities:
     lda fairy_x
     adc fairy_vx
