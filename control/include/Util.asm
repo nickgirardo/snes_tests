@@ -1,3 +1,11 @@
+.macro ACC16
+    rep #$20
+.endm
+
+.macro ACC8
+    sep #$20
+.endm
+
 ; macro for moving a block of data from cart to ram
 ; this is probably not the best way to do this but it's working for now
 .macro CopyRomToRam args ROM_ADDR RAM_BANK RAM_ADDR SIZE

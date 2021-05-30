@@ -17,12 +17,16 @@
 .include "include/Sprites/Fairy.inc"
 
 .define vblank_done $0000
-.define fairy_x $0002
-.define fairy_y $0004
+.define fairy_x     $0002
+.define fairy_xl    $0002
+.define fairy_xh    $0003
+.define fairy_y     $0004
+.define fairy_yl    $0004
+.define fairy_yh    $0005
 
 VBlank:
-    lda fairy_x
-    ldy fairy_y
+    lda fairy_xh
+    ldy fairy_yh
 
     ; Reset our OAM read/ write address to access first spot
     stz $2102
@@ -44,7 +48,7 @@ Start:
     Snes_Init
 
     ; Set the A register to 8-bit
-    sep #$20
+    ACC8
 
     ; Start FBlank by turning off the screen
     lda #%10000000
@@ -139,20 +143,25 @@ VblankWait:
     jmp MainLoop
 
 
-
 ; TODO load in controller data
 ReadController:
     rts
 
 
-; TODO store position values as 16 bit for granularity
+; TODO currently our physics just moves the fairy linearly
+; Once we have controller input we should use that to drive her
+; Also, speed should be stored in memory as well
 DoPhysics:
+    ACC16
+
     lda fairy_x
-    inc a
+    adc #$150
     sta fairy_x
 
     lda fairy_y
-    inc a
+    adc #$90
     sta fairy_y
+
+    ACC8
 
     rts
