@@ -16,6 +16,7 @@
 
 .include "include/Sprites/Fairy.inc"
 
+; Memory addresses
 .define vblank_done $0000
 
 .define p1_control      $0002
@@ -28,6 +29,13 @@
 .define fairy_y     $0006
 .define fairy_yl    $0006
 .define fairy_yh    $0007
+
+.define fairy_vx    $0008
+.define fairy_vxl   $0008
+.define fairy_vxh   $0009
+.define fairy_vy    $0010
+.define fairy_vyl   $0010
+.define fairy_vyh   $0011
 
 VBlank:
     lda fairy_xh
@@ -59,6 +67,21 @@ Start:
     lda #%10000000
     sta $2100
 
+    ; Setting starting values
+    lda #$30
+    sta fairy_xh
+    stz fairy_xl
+
+    lda #$75
+    sta fairy_y
+    stz fairy_yl
+
+    stz fairy_vxh
+    stz fairy_vxl
+
+    stz fairy_vyh
+    stz fairy_vyl
+
     SetupVramDMA 0 sprite_fairy_rom 0 $4000 sprite_fairy_size
     SetupPaletteDMA 1 palette_rom 0 $90 palette_size
 
@@ -73,12 +96,6 @@ Start:
     ; Start the transfer, bit one for channel 0
     lda	#$01
     sta	$420b
-
-    lda #$30
-    sta fairy_x
-
-    lda #$75
-    sta fairy_y
 
     ; Setting up our sprite at first spot in oam
     stz $2102
@@ -167,18 +184,59 @@ ControllerAutoReadWait:
     rts
 
 
-; TODO currently our physics just moves the fairy linearly
-; Once we have controller input we should use that to drive her
-; Also, speed should be stored in memory as well
+; TODO define physics constants instead of using magic numbers
 DoPhysics:
     ACC16
 
+    ; Check if right is pressed
+    lda p1_control_l
+    and #%00000001
+    bne P1RightDown
+
+    ; Check if left is pressed
+    lda p1_control_l
+    and #%00000010
+    beq YMovement
+
+P1LeftDown:
+    lda fairy_vx
+    sbc #$8
+    sta fairy_vx
+    bra YMovement
+P1RightDown:
+    lda fairy_vx
+    adc #$8
+    sta fairy_vx
+
+YMovement:
+    ; Check if down is pressed
+    lda p1_control_l
+    and #%00000100
+    bne P1DownDown
+
+    ; Check if up is pressed
+    lda p1_control_l
+    and #%00001000
+    beq AddVelocities
+
+P1UpDown:
+    lda fairy_vy
+    sbc #$8
+    sta fairy_vy
+    bra AddVelocities
+P1DownDown:
+    lda fairy_vy
+    adc #$8
+    sta fairy_vy
+
+    ; TODO Calculate friction
+AddVelocities:
     lda fairy_x
-    adc #$150
+    adc fairy_vx
     sta fairy_x
 
     lda fairy_y
-    adc #$90
+    adc fairy_vy
     sta fairy_y
 
     ACC8
