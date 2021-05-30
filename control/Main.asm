@@ -17,12 +17,17 @@
 .include "include/Sprites/Fairy.inc"
 
 .define vblank_done $0000
-.define fairy_x     $0002
-.define fairy_xl    $0002
-.define fairy_xh    $0003
-.define fairy_y     $0004
-.define fairy_yl    $0004
-.define fairy_yh    $0005
+
+.define p1_control      $0002
+.define p1_control_l    $0002
+.define p1_control_h    $0003
+
+.define fairy_x     $0004
+.define fairy_xl    $0004
+.define fairy_xh    $0005
+.define fairy_y     $0006
+.define fairy_yl    $0006
+.define fairy_yh    $0007
 
 VBlank:
     lda fairy_xh
@@ -115,8 +120,9 @@ Start:
     lda #%00001111
     sta $2100
 
-    lda #$80
-    sta $4200       ; Enable NMI
+    ; Enable NMI and Controller Auto Read
+    lda #$81
+    sta $4200
 
 
     ; Loop forever.
@@ -143,8 +149,21 @@ VblankWait:
     jmp MainLoop
 
 
-; TODO load in controller data
+; Load in controller data
 ReadController:
+    ; The lsb of address $4212 stores the controller auto read status
+    ; If it is set the controllers have not finished being auto read
+ControllerAutoReadWait:
+    lda $4212
+    and #%00000001
+    bne ControllerAutoReadWait
+
+    ; Auto read ready, copy data to ram
+    lda $4218
+    sta p1_control_h
+    lda $4219
+    sta p1_control_l
+
     rts
 
 
