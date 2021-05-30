@@ -38,23 +38,35 @@
 .define fairy_vx    $0008
 .define fairy_vxl   $0008
 .define fairy_vxh   $0009
-.define fairy_vy    $0010
-.define fairy_vyl   $0010
-.define fairy_vyh   $0011
+.define fairy_vy    $000a
+.define fairy_vyl   $000a
+.define fairy_vyh   $000b
 
-.define fairy_attr  $0012
+.define fairy_attr  $000c
 
+    ; TODO we're probably best off keeping a mirror of oam in wram
+    ; and dma'ing it over during vblank
 VBlank:
-    lda fairy_xh
-    ldy fairy_yh
-
-    ; Reset our OAM read/ write address to access first spot
+    ; Copying fairy, first slot in oam
     stz $2102
     stz $2103
 
-    ; Update x and y values
+    ; Starting x = $30
+    lda fairy_xh
     sta $2104
-    sty $2104
+    ; Starting y = $57
+    lda fairy_yh
+    sta $2104
+    ; Tile number = 0
+    stz $2104
+    ; Fairy attributes
+    lda fairy_attr
+    sta $2104
+
+    lda #00
+    sta $2102
+    lda #01
+    sta $2103
 
     ; We're finished rendering the frame
     ; Set vblank_done so the next frame can be started
@@ -126,8 +138,7 @@ Start:
     lda fairy_y
     sta $2104
     ; Tile number = 0
-    lda #$00
-    sta $2104
+    stz $2104
     ; Object attributes
     lda fairy_attr
     sta $2104
@@ -209,13 +220,28 @@ DoPhysics:
     and #%00000010
     beq YMovement
 
-    ; TODO flip fairy sprite here
 P1LeftDown:
+    ; If we have left down the fairy should face left
+    ; This corresponds to hflip bit = 0
+    ACC8
+    lda fairy_attr
+    and #%10111111
+    sta fairy_attr
+    ACC16
+
     lda fairy_vx
     sbc #fairy_speed
     sta fairy_vx
     bra YMovement
 P1RightDown:
+    ; If we have right down the fairy should face right
+    ; This corresponds to hflip bit = 1
+    ACC8
+    lda fairy_attr
+    ora #%01000000
+    sta fairy_attr
+    ACC16
+
     lda fairy_vx
     adc #fairy_speed
     sta fairy_vx
