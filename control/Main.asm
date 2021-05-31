@@ -16,6 +16,29 @@
 
 .include "include/Sprites/Fairy.inc"
 
+; Logical Structs
+.struct oam_obj
+x       db
+y       db
+tile    db
+attr    db
+.endst
+
+.struct phys_obj
+x       .dw
+xl      db
+xh      db
+y       .dw
+yl      db
+yh      db
+vx      .dw
+vxl     db
+vxh     db
+vy      .dw
+vyl     db
+vyh     db
+.endst
+
 ; Physics constants
 .define fairy_maxv  $0300
 .define fairy_speed $40
@@ -28,45 +51,23 @@
 .define p1_control_l    $0002
 .define p1_control_h    $0003
 
-.define fairy_x     $0004
-.define fairy_xl    $0004
-.define fairy_xh    $0005
-.define fairy_y     $0006
-.define fairy_yl    $0006
-.define fairy_yh    $0007
+; This enum should be 9 bytes (phys_obj is 8, and attrs)
+.enum $0004
+fairy instanceof phys_obj
+fairy.attr db
+.ende
 
-.define fairy_vx    $0008
-.define fairy_vxl   $0008
-.define fairy_vxh   $0009
-.define fairy_vy    $000a
-.define fairy_vyl   $000a
-.define fairy_vyh   $000b
+.enum $7e2000
+oam_buffer instanceof oam_obj 64 startfrom 0
+.ende
 
-.define fairy_attr  $000c
-
-    ; TODO we're probably best off keeping a mirror of oam in wram
-    ; and dma'ing it over during vblank
 VBlank:
-    ; Copying fairy, first slot in oam
-    stz $2102
-    stz $2103
+    SetupOamDMA 0 oam_buffer $00 $ff
 
-    ; Starting x = $30
-    lda fairy_xh
-    sta $2104
-    ; Starting y = $57
-    lda fairy_yh
-    sta $2104
-    ; Tile number = 0
-    stz $2104
-    ; Fairy attributes
-    lda fairy_attr
-    sta $2104
-
-    lda #00
-    sta $2102
-    lda #01
-    sta $2103
+    ; Start the transfer
+    ; Enabling the lsb corresponds to the first channels
+    lda	#%00000001
+    sta	$420b
 
     ; We're finished rendering the frame
     ; Set vblank_done so the next frame can be started
@@ -80,7 +81,7 @@ Start:
     Snes_Init
 
     ; Set the A register to 8-bit
-    ACC8
+    A8
 
     ; Start FBlank by turning off the screen
     lda #%10000000
@@ -88,18 +89,19 @@ Start:
 
     ; Setting starting values
     lda #$30
-    sta fairy_xh
-    stz fairy_xl
+    sta fairy.xh
+    stz fairy.xl
 
     lda #$75
-    sta fairy_yh
-    stz fairy_yl
+    sta fairy.yh
+    stz fairy.yl
 
-    stz fairy_vxh
-    stz fairy_vxl
+    stz fairy.vxh
+    stz fairy.vxl
 
-    stz fairy_vyh
-    stz fairy_vyl
+    stz fairy.vyh
+    stz fairy.vyl
+
 
     ; Fairy attributes
     ; vhoopppn
@@ -110,10 +112,20 @@ Start:
     ; n = Name table (i.e. msb of tile)
     ; Here I am setting priority, horizontal flip, palette = 1
     lda #%01110010
-    sta fairy_attr
+    sta fairy.attr
+
+    ; Clear oam mirror
+    ; 64 objects, 4 bytes each
+    ldx #$ff
+OamClearStart:
+    dex
+    lda #0
+    sta oam_buffer,x
+    txa
+    bne OamClearStart
 
     SetupVramDMA 0 sprite_fairy_rom 0 $4000 sprite_fairy_size
-    SetupPaletteDMA 1 palette_rom 0 $90 palette_size
+    SetupPaletteDMA 1 palette_rom $90 palette_size
 
     ; Start the transfers
     ; Enabling the first two bits corresponds to the first two channels
@@ -127,22 +139,7 @@ Start:
     lda	#$01
     sta	$420b
 
-    ; Setting up our sprite at first spot in oam
-    stz $2102
-    stz $2103
-
-    ; Starting x = $30
-    lda fairy_x
-    sta $2104
-    ; Starting y = $57
-    lda fairy_y
-    sta $2104
-    ; Tile number = 0
-    stz $2104
-    ; Object attributes
-    lda fairy_attr
-    sta $2104
-
+    ; TODO Can't remember what this is for :(
     lda #00
     sta $2102
     lda #01
@@ -174,6 +171,9 @@ MainLoop:
 
     ; Do physics
     jsr DoPhysics
+
+    ; Prepare OAM
+    jsr PrepareOAM
 
 ; We're finished everything for our frame
 ; Wait here until Vblank is done
@@ -208,7 +208,7 @@ ControllerAutoReadWait:
 
 ; TODO bounce off walls
 DoPhysics:
-    ACC16
+    A16
 
     ; Check if right is pressed
     lda p1_control_l
@@ -223,28 +223,28 @@ DoPhysics:
 P1LeftDown:
     ; If we have left down the fairy should face left
     ; This corresponds to hflip bit = 0
-    ACC8
-    lda fairy_attr
+    A8
+    lda fairy.attr
     and #%10111111
-    sta fairy_attr
-    ACC16
+    sta fairy.attr
+    A16
 
-    lda fairy_vx
+    lda fairy.vx
     sbc #fairy_speed
-    sta fairy_vx
+    sta fairy.vx
     bra YMovement
 P1RightDown:
     ; If we have right down the fairy should face right
     ; This corresponds to hflip bit = 1
-    ACC8
-    lda fairy_attr
+    A8
+    lda fairy.attr
     ora #%01000000
-    sta fairy_attr
-    ACC16
+    sta fairy.attr
+    A16
 
-    lda fairy_vx
+    lda fairy.vx
     adc #fairy_speed
-    sta fairy_vx
+    sta fairy.vx
 
 YMovement:
     ; Check if down is pressed
@@ -258,18 +258,18 @@ YMovement:
     beq CalcFriction
 
 P1UpDown:
-    lda fairy_vy
+    lda fairy.vy
     sbc #fairy_speed
-    sta fairy_vy
+    sta fairy.vy
     bra CalcFriction
 P1DownDown:
-    lda fairy_vy
+    lda fairy.vy
     adc #fairy_speed
-    sta fairy_vy
+    sta fairy.vy
 
 CalcFriction:
     ;Starting with x friction first
-    lda fairy_vx
+    lda fairy.vx
     bmi MovingLeft
 MovingRight:
     ; Check against max vel
@@ -278,19 +278,19 @@ MovingRight:
     bmi FrictionRight
     ; Otherwise we cap it here
     lda #fairy_maxv
-    sta fairy_vx
+    sta fairy.vx
 
 FrictionRight:
     ; Subtract friction constant from velocity
-    lda fairy_vx
+    lda fairy.vx
     sbc #fairy_fric
-    sta fairy_vx
+    sta fairy.vx
     ; If this value is still positive we are fine
     bpl FrictionY
 
     ; Otherwise we've turned the positive value negative
     ; So we'll zero it here
-    stz fairy_vx
+    stz fairy.vx
     bra FrictionY
 
 MovingLeft:
@@ -300,24 +300,24 @@ MovingLeft:
     bpl FrictionLeft
     ; Otherwise we cap it here
     lda #-fairy_maxv
-    sta fairy_vx
+    sta fairy.vx
 
 FrictionLeft:
     ; Add friction constant to velocity
-    lda fairy_vx
+    lda fairy.vx
     adc #fairy_fric
-    sta fairy_vx
+    sta fairy.vx
     ; If this value is still negative we are fine
     bmi FrictionY
 
     ; Otherwise we've turned the negative value positive
     ; So we'll zero it here
-    stz fairy_vx
+    stz fairy.vx
     bra FrictionY
 
     ; Done with the x friction, lets do the y friction now
 FrictionY:
-    lda fairy_vy
+    lda fairy.vy
     bmi MovingUp
 MovingDown:
     ; Check against max vel
@@ -326,19 +326,19 @@ MovingDown:
     bmi FrictionDown
     ; Otherwise we cap it here
     lda #fairy_maxv
-    sta fairy_vy
+    sta fairy.vy
 
 FrictionDown:
     ; Subtract friction constant from velocity
-    lda fairy_vy
+    lda fairy.vy
     sbc #fairy_fric
-    sta fairy_vy
+    sta fairy.vy
     ; If this value is still positive we are fine
     bpl AddVelocities
 
     ; Otherwise we've turned the positive value negative
     ; So we'll zero it here
-    stz fairy_vy
+    stz fairy.vy
     bra AddVelocities
 
 MovingUp:
@@ -348,31 +348,45 @@ MovingUp:
     bpl FrictionUp
     ; Otherwise we cap it here
     lda #-fairy_maxv
-    sta fairy_vy
+    sta fairy.vy
 
 FrictionUp:
     ; Add friction constant to velocity
-    lda fairy_vy
+    lda fairy.vy
     adc #fairy_fric
-    sta fairy_vy
+    sta fairy.vy
     ; If this value is still negative we are fine
     bmi AddVelocities
 
     ; Otherwise we've turned the negative value positive
     ; So we'll zero it here
-    stz fairy_vy
+    stz fairy.vy
     bra AddVelocities
 
 
 AddVelocities:
-    lda fairy_x
-    adc fairy_vx
-    sta fairy_x
+    lda fairy.x
+    adc fairy.vx
+    sta fairy.x
 
-    lda fairy_y
-    adc fairy_vy
-    sta fairy_y
+    lda fairy.y
+    adc fairy.vy
+    sta fairy.y
 
-    ACC8
+    A8
+
+    rts
+
+
+    ; Copy fairy position to oam mirror
+PrepareOAM:
+    lda fairy.xh
+    sta oam_buffer.0.x
+    lda fairy.yh
+    sta oam_buffer.0.y
+    lda 0
+    sta oam_buffer.0.tile
+    lda fairy.attr
+    sta oam_buffer.0.attr
 
     rts
