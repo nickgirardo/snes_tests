@@ -32,6 +32,7 @@
     .endr
 .endm
 
+; TODO is 256 byte cap real?
 ; macro for perparing a transfer of palette data into the PPU's CGRAM
 ; only use if SIZE is less than 256 bytes
 .macro SetupPaletteDMA args DMA_CHANNEL CPU_ADDR CGRAM_ADDR SIZE

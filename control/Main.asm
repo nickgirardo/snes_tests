@@ -2,21 +2,25 @@
 .include "include/Snes_Init.asm"
 .include "include/Util.asm"
 
+; TODO is there a better way of storing these rom addresses?
 .define palette $40
 .define palette_rom palette+$8000
-.define palette_size $20
 
+; Load in the palette data from the binary file
 .org palette
-.dw $0000, $ff7f, $7e23, $b711
-.dw $9e36, $a514, $ff01, $7810
+.incbin "bin/palette.bin" fsize _sizeof_palette
 
+; TODO is there a better way of storing these rom addresses?
 .define sprite_fairy $1000
 .define sprite_fairy_rom sprite_fairy+$8000
-.define sprite_fairy_size  $0800
 
-.include "include/Sprites/Fairy.inc"
+; Load in the fairy sprite data from the binary file
+.org sprite_fairy
+.incbin "bin/fairy.bin" fsize _sizeof_sprite_fairy
 
-; Logical Structs
+; Logical structs
+
+; Layout of information in oam
 .struct oam_obj
 x       db
 y       db
@@ -24,6 +28,10 @@ tile    db
 attr    db
 .endst
 
+; Basics physics data for an object
+; NOTE the . before the dw bellow cause the position to not advance
+; So the words overlap with their component bytes
+; This makes addressing the entire word or either byte very easy
 .struct phys_obj
 x       .dw
 xl      db
@@ -40,8 +48,11 @@ vyh     db
 .endst
 
 ; Physics constants
-.define fairy_maxv  $0300
-.define fairy_speed $40
+.define fairy_maxv  $0320
+.define fairy_speed $42
+; NOTE currently friction is just done by subtracting the constant every frame
+; this isn't very accurate to life, but it's more than good enough for now
+; I may revisit this later but I don't think it's necessary
 .define fairy_fric  $18
 
 ; Memory addresses
@@ -62,7 +73,7 @@ oam_buffer instanceof oam_obj 64 startfrom 0
 .ende
 
 VBlank:
-    SetupOamDMA 0 oam_buffer $00 $ff
+    SetupOamDMA 0 oam_buffer $00 _sizeof_oam_buffer
 
     ; Start the transfer
     ; Enabling the lsb corresponds to the first channels
@@ -124,8 +135,8 @@ OamClearStart:
     txa
     bne OamClearStart
 
-    SetupVramDMA 0 sprite_fairy_rom 0 $4000 sprite_fairy_size
-    SetupPaletteDMA 1 palette_rom $90 palette_size
+    SetupVramDMA 0 sprite_fairy_rom 0 $4000 _sizeof_sprite_fairy
+    SetupPaletteDMA 1 palette_rom $90 _sizeof_palette
 
     ; Start the transfers
     ; Enabling the first two bits corresponds to the first two channels
@@ -139,7 +150,7 @@ OamClearStart:
     lda	#$01
     sta	$420b
 
-    ; TODO Can't remember what this is for :(
+    ; Set OAM addresses and object priority
     lda #00
     sta $2102
     lda #01
