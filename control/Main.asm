@@ -177,7 +177,7 @@ MainLoop:
     ; Starting a new frame, reset vblank_done
     stz vblank_done
 
-    ; NoTE the following subroutines probably should just be normal branches?
+    ; NOTE the following subroutines probably should just be normal branches?
     ; Read controllers
     jsr ReadController
 
