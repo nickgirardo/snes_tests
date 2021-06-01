@@ -56,7 +56,14 @@ vyh     db
 .define fairy_fric  $18
 
 ; Memory addresses
+; NOTE using the whole byte just to check if vblank is done
+; If we have more, similar flags we can use some of these bytes
 .define vblank_done $0000
+
+; Ticks up every frame
+; Since this is 8 bits, it will reset every ~4 seconds
+; Used for animations currently
+.define frame_count $0001
 
 .define p1_control      $0002
 .define p1_control_l    $0002
@@ -65,6 +72,7 @@ vyh     db
 ; This enum should be 9 bytes (phys_obj is 8, and attrs)
 .enum $0004
 fairy instanceof phys_obj
+fairy.tile db
 fairy.attr db
 .ende
 
@@ -99,6 +107,8 @@ Start:
     sta $2100
 
     ; Setting starting values
+    stz frame_count
+
     lda #$30
     sta fairy.xh
     stz fairy.xl
@@ -113,6 +123,7 @@ Start:
     stz fairy.vyh
     stz fairy.vyl
 
+    stz fairy.tile
 
     ; Fairy attributes
     ; vhoopppn
@@ -177,12 +188,21 @@ MainLoop:
     ; Starting a new frame, reset vblank_done
     stz vblank_done
 
-    ; NOTE the following subroutines probably should just be normal branches?
+    ; Increment frame
+    ; Using this for animation right now
+    ; This is 8bit, so it repeats every ~4 seconds
+    lda frame_count
+    ina
+    sta frame_count
+
     ; Read controllers
     jsr ReadController
 
     ; Do physics
-    jsr DoPhysics
+    jsr Physics
+
+    ; Handle animations
+    jsr Animations
 
     ; Prepare OAM
     jsr PrepareOAM
@@ -219,7 +239,7 @@ ControllerAutoReadWait:
 
 
 ; TODO bounce off walls
-DoPhysics:
+Physics:
     A16
 
     ; Check if right is pressed
@@ -389,6 +409,30 @@ AddVelocities:
 
     rts
 
+    ; Handle animations
+Animations:
+
+    ; Fairy wings animation
+    ; Check if any of the arrow keys are pressed down
+    ; If not, we're done with animations
+    lda p1_control_l
+    and #%00001111
+    bne FlapWings
+
+    stz fairy.tile
+    bra DoneAnimations
+
+FlapWings:
+    ; If we're here that means at least one arrow key is down
+    ; Flap the fiary's wings
+    lda frame_count
+    and #%00001000
+    lsr
+    lsr
+    sta fairy.tile
+
+DoneAnimations:
+    rts
 
     ; Copy fairy position to oam mirror
 PrepareOAM:
@@ -396,9 +440,11 @@ PrepareOAM:
     sta oam_buffer.0.x
     lda fairy.yh
     sta oam_buffer.0.y
-    lda 0
+    lda fairy.tile
     sta oam_buffer.0.tile
     lda fairy.attr
     sta oam_buffer.0.attr
+
+
 
     rts
