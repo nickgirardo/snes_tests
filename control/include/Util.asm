@@ -128,7 +128,7 @@
 
     lda	#VRAM_ADDR		; the controller will get the hardware register ($2118) as location to where to write the data.
     .if NARGS == 7		; set the accumulator (A) register into 16 bit mode7
-        rep	#$01
+        clc
         adc VRAM_OFFSET_ADDR
     .endif
     sta	$2116		; but we still need to specify WHERE in VRAM we want to write the data - what we are doing right now.
@@ -164,56 +164,51 @@
 ; macro for perparing a transfer of graphics data into the PPU's VRAM
 ; only use if SIZE is less than 256 bytes
 ; OFFSET_ADDR is optional
-.macro msetVramDMA args DMA_CHANNEL CPU_ADDR CPU_BANK VRAM_ADDR SIZE
+.macro msetVramDMA args DMA_CHANNEL CPU_ADDR VRAM_ADDR SIZE
 
     ; save the current accumulator, Y index and status registers for the time the function is executed
     pha
-    phy
+    phx
     php
 
-    ; set the accumulator into 16 bit mode
-    ; set the index (X and Y) register into 8 bit mode
-    rep	#$20
-    sep	#$10
+    A8
+    XY16
 
-    ; this is the vram increment value
+    ; VRAM increment value
     ; write $80 bytes in one row
     ; not 100% sure what this value entails
-    ldy	#$80
-    sty	$2115
+    lda #$80
+    sta $2115
 
-    ; location in vram to store data
-    lda	#VRAM_ADDR
-    sta	$2116
+    ; Destination address in VRAM
+    ldx #VRAM_ADDR
+    stx $2116
 
-    ; number of bytes to be sent from the controller.
-    lda	#SIZE
-    sta	$4305+($10*DMA_CHANNEL)
-
-    ; from where the data is supposed to be loaded from
-    lda	#CPU_ADDR
-    sta	$4302+($10*DMA_CHANNEL)
-
-    ; set the accumulator into 8 bit mode
-    sep	#$20
-
-    ; from which bank the data is supposed to be loaded from
-    ldy	#CPU_BANK
-    sty	$4304+($10*DMA_CHANNEL)
-
-    ; important!
+    ; DMA settings
     ; 43x0 format: ab0cdeee
     ; Setting cd = 11 means not incrementing the source address
     ; Setting eee = 001 means moving words at a time
-    ldy	#%00001101
-    sty	$4300+($10*DMA_CHANNEL)
+    lda #%00001101
+    sta $4300+($10*DMA_CHANNEL)
 
-    ; 18 here refers to $2118, the vram gate
-    ldy	#$18
-    sty	$4301+($10*DMA_CHANNEL)
+    ; DMA Destination
+    ; $18 is the lower byte of the VRAM data register ($2118)
+    lda #$18
+    sta $4301+($10*DMA_CHANNEL)
 
-    ; restore the state of all registers
+    ; Source address and bank
+    ; Slightly jank, but I don't think our assembler gives us a better option
+    ldx #(CPU_ADDR & $00FFFF)
+    stx $4302+($10*DMA_CHANNEL)
+    lda #(CPU_ADDR >> 16)
+    sta $4304+($10*DMA_CHANNEL)
+
+    ; Number of bytes to transfer
+    ldx #SIZE
+    stx $4305+($10*DMA_CHANNEL)
+
+    ; Restore registers
     plp
-    ply
+    plx
     pla
 .endm
