@@ -56,10 +56,9 @@
     sta	$4301+($10*DMA_CHANNEL)
 
     ; Source address and bank
-    ; Slightly jank, but I don't think our assembler gives us a better option
-    ldx #(CPU_ADDR & $00FFFF)
+    ldx #loword(CPU_ADDR)
     stx $4302+($10*DMA_CHANNEL)
-    lda #(CPU_ADDR >> 16)
+    lda #bankbyte(CPU_ADDR)
     sta $4304+($10*DMA_CHANNEL)
 
     ; Number of bytes to transfer
@@ -92,10 +91,9 @@
     sta $4301+($10*DMA_CHANNEL)
 
     ; Source address and bank
-    ; Slightly jank, but I don't think our assembler gives us a better option
-    ldx #(CPU_ADDR & $00FFFF)
+    ldx #loword(CPU_ADDR)
     stx $4302+($10*DMA_CHANNEL)
-    lda #(CPU_ADDR >> 16)
+    lda #bankbyte(CPU_ADDR)
     sta $4304+($10*DMA_CHANNEL)
 
     ; Number of bytes to copy
@@ -197,10 +195,9 @@
     sta $4301+($10*DMA_CHANNEL)
 
     ; Source address and bank
-    ; Slightly jank, but I don't think our assembler gives us a better option
-    ldx #(CPU_ADDR & $00FFFF)
+    ldx #loword(CPU_ADDR)
     stx $4302+($10*DMA_CHANNEL)
-    lda #(CPU_ADDR >> 16)
+    lda #bankbyte(CPU_ADDR)
     sta $4304+($10*DMA_CHANNEL)
 
     ; Number of bytes to transfer
