@@ -240,6 +240,9 @@ ControllerAutoReadWait:
 
 ; TODO bounce off walls
 Physics:
+    pha
+    php
+
     A16
 
     ; Check if right is pressed
@@ -262,6 +265,7 @@ P1LeftDown:
     A16
 
     lda fairy.vx
+    sec
     sbc #fairy_speed
     sta fairy.vx
     bra YMovement
@@ -275,6 +279,7 @@ P1RightDown:
     A16
 
     lda fairy.vx
+    clc
     adc #fairy_speed
     sta fairy.vx
 
@@ -291,11 +296,13 @@ YMovement:
 
 P1UpDown:
     lda fairy.vy
+    sec
     sbc #fairy_speed
     sta fairy.vy
     bra CalcFriction
 P1DownDown:
     lda fairy.vy
+    clc
     adc #fairy_speed
     sta fairy.vy
 
@@ -305,6 +312,7 @@ CalcFriction:
     bmi MovingLeft
 MovingRight:
     ; Check against max vel
+    sec
     sbc #fairy_maxv
     ; If this is negative, we are slower than max velocity
     bmi FrictionRight
@@ -315,6 +323,7 @@ MovingRight:
 FrictionRight:
     ; Subtract friction constant from velocity
     lda fairy.vx
+    sec
     sbc #fairy_fric
     sta fairy.vx
     ; If this value is still positive we are fine
@@ -327,6 +336,7 @@ FrictionRight:
 
 MovingLeft:
     ; Check against max vel
+    clc
     adc #fairy_maxv
     ; If this is positive, we are slower than max velocity
     bpl FrictionLeft
@@ -337,6 +347,7 @@ MovingLeft:
 FrictionLeft:
     ; Add friction constant to velocity
     lda fairy.vx
+    clc
     adc #fairy_fric
     sta fairy.vx
     ; If this value is still negative we are fine
@@ -353,6 +364,7 @@ FrictionY:
     bmi MovingUp
 MovingDown:
     ; Check against max vel
+    sec
     sbc #fairy_maxv
     ; If this is negative, we are slower than max velocity
     bmi FrictionDown
@@ -363,6 +375,7 @@ MovingDown:
 FrictionDown:
     ; Subtract friction constant from velocity
     lda fairy.vy
+    sec
     sbc #fairy_fric
     sta fairy.vy
     ; If this value is still positive we are fine
@@ -375,6 +388,7 @@ FrictionDown:
 
 MovingUp:
     ; Check against max vel
+    clc
     adc #fairy_maxv
     ; If this is positive, we are slower than max velocity
     bpl FrictionUp
@@ -385,6 +399,7 @@ MovingUp:
 FrictionUp:
     ; Add friction constant to velocity
     lda fairy.vy
+    clc
     adc #fairy_fric
     sta fairy.vy
     ; If this value is still negative we are fine
@@ -395,19 +410,27 @@ FrictionUp:
     stz fairy.vy
     bra AddVelocities
 
-
 AddVelocities:
     lda fairy.x
+    clc
     adc fairy.vx
     sta fairy.x
 
+
     lda fairy.y
+    clc
     adc fairy.vy
     sta fairy.y
 
+    ; NOTE this seems to be necessary
+    ; I'm surprised as I'd expect this to be overwritten by the plp immediately
     A8
 
+    plp
+    pla
+
     rts
+
 
     ; Handle animations
 Animations:
