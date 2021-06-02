@@ -146,7 +146,7 @@ OamClearStart:
     txa
     bne OamClearStart
 
-    SetupVramDMA 0 sprite_fairy_rom 0 $4000 _sizeof_sprite_fairy
+    SetupVramDMA 0 sprite_fairy_rom $4000 _sizeof_sprite_fairy
     SetupPaletteDMA 1 palette_rom $90 _sizeof_palette
 
     ; Start the transfers

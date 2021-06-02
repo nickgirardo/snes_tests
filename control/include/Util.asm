@@ -111,7 +111,7 @@
 ; TODO is size *really* capped at 256 bytes? Why?
 ; only use if SIZE is less than 256 bytes
 ; OFFSET_ADDR is optional
-.macro SetupVramDMA args DMA_CHANNEL CPU_ADDR CPU_BANK VRAM_ADDR SIZE CPU_OFFSET_ADDR VRAM_OFFSET_ADDR
+.macro SetupVramDMA args DMA_CHANNEL CPU_ADDR VRAM_ADDR SIZE CPU_OFFSET_ADDR VRAM_OFFSET_ADDR
 
     ; save the current accumulator, Y index and status registers for the time the function is executed.
     pha
@@ -121,38 +121,42 @@
     A16
     XY8
 
-    ldy	#$80		;  we will try to write 128 ($80) bytes in one row ...
-    sty	$2115		; ... and we will let the PPU let this know.
-
-    lda	#VRAM_ADDR		; the controller will get the hardware register ($2118) as location to where to write the data.
-    .if NARGS == 7		; set the accumulator (A) register into 16 bit mode7
+    ; Destination address with optional offset
+    lda	#VRAM_ADDR
+    .if NARGS == 6
         clc
         adc VRAM_OFFSET_ADDR
     .endif
-    sta	$2116		; but we still need to specify WHERE in VRAM we want to write the data - what we are doing right now.
+    sta	$2116
 
-    lda	#SIZE		; number of bytes to be sent from the controller.
-    sta	$4305+($10*DMA_CHANNEL)
+    ; DMA Settings
+    ; #01 means word increments
+    ldy	#$01
+    sty	$4300+($10*DMA_CHANNEL)
 
-    lda	#CPU_ADDR	; from where the data is supposed to be loaded from
-    .if NARGS == 7
-        rep	#$01
+    ; DMA Destination
+    ; $18 is the lower byte of the VRAM data register ($2118)
+    ldy	#$18
+    sty	$4301+($10*DMA_CHANNEL)
+
+    ; Source address
+    ; I can't remember why I went through all of the effort to allow
+    ; offsets to be used
+    lda	#loword(CPU_ADDR)
+    .if NARGS == 6
+        clc
         adc CPU_OFFSET_ADDR
     .endif
     sta	$4302+($10*DMA_CHANNEL)
 
-    A8
-
-    ldy	#CPU_BANK		; from which bank the data is supposed to be loaded from
+    ldy	#bankbyte(CPU_ADDR)
     sty	$4304+($10*DMA_CHANNEL)
 
-    ldy	#$01		; set the mode on how the channel is supposed to do it's work. 1= word increment
-    sty	$4300+($10*DMA_CHANNEL)
+    ; Number of bytes to transfer
+    lda	#SIZE
+    sta	$4305+($10*DMA_CHANNEL)
 
-    ldy	#$18		; remember that I wrote "the controller will get the hardware register"? This is it. 2118 is the VRAM gate.
-    sty	$4301+($10*DMA_CHANNEL)
-
-    plp			; Restore the state of all registers before leaving the function.
+    plp
     ply
     pla
 .endm
