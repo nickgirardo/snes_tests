@@ -238,7 +238,6 @@ ControllerAutoReadWait:
     rts
 
 
-; TODO bounce off walls
 Physics:
     pha
     php
@@ -379,12 +378,12 @@ FrictionDown:
     sbc #fairy_fric
     sta fairy.vy
     ; If this value is still positive we are fine
-    bpl AddVelocities
+    bpl WallBounces
 
     ; Otherwise we've turned the positive value negative
     ; So we'll zero it here
     stz fairy.vy
-    bra AddVelocities
+    bra WallBounces
 
 MovingUp:
     ; Check against max vel
@@ -403,12 +402,95 @@ FrictionUp:
     adc #fairy_fric
     sta fairy.vy
     ; If this value is still negative we are fine
-    bmi AddVelocities
+    bmi WallBounces
 
     ; Otherwise we've turned the negative value positive
     ; So we'll zero it here
     stz fairy.vy
+    bra WallBounces
+
+    ; Bounce of walls section
+WallBounces:
+    ; Which X Wall do we need to check?
+    ; If we're moving left (negative) check that wall
+    ; Otherwise check right
+    lda fairy.vx
+    bmi CheckLeftWall
+
+CheckRightWall:
+    ; We set this check up so that if the fairy would go across the edge
+    ; the carry flag will be set
+    lda fairy.x
+    ; Fairy width (16 pixels)
+    adc #$1000
+    adc fairy.vx
+    bcc CheckYWalls
+
+    ; Move fairy to screen edge
+    lda #-$1000
+    sta fairy.x
+
+    ; Negate velocity
+    lda #$00
+    sbc fairy.vx
+    sta fairy.vx
+
+    bra CheckYWalls
+
+CheckLeftWall:
+    ; We set this check up so that if the fairy would go across the edge
+    ; the carry flag will be clear
+    lda fairy.x
+    adc fairy.vx
+    bcs CheckYWalls
+
+    ; Move fairy to screen edge and negate velocity
+    lda #$00
+    sta fairy.x
+    sbc fairy.vx
+    sta fairy.vx
+
+CheckYWalls:
+    ; Which Y Wall do we need to check?
+    ; If we're moving up (negative) check that wall
+    ; Otherwise check bottom
+    lda fairy.vy
+    bmi CheckTopWall
+
+CheckBottomWall:
+    ; We set this check up so that if the fairy would go across the edge
+    ; the carry flag will be set
+    lda fairy.y
+    ; Fairy width (16 pixels)
+    ; Screen is 224 pixels (shifted left because we're measuring in subpixels)
+    adc #$1000 + (($100 - 224) << 8)
+    adc fairy.vy
+    bcc AddVelocities
+
+    ; Move fairy to screen edge
+    lda #-1 * ($1000 + (($100 - 224) << 8))
+    sta fairy.y
+
+    ; Negate velocity
+    lda #$00
+    sbc fairy.vy
+    sta fairy.vy
+
     bra AddVelocities
+
+CheckTopWall:
+    ; We set this check up so that if the fairy would go across the edge
+    ; the carry flag will be clear
+    lda fairy.y
+    adc fairy.vy
+    bcs AddVelocities
+
+    ; Move fairy to screen edge and negate velocity
+    lda #$00
+    sta fairy.y
+    sbc fairy.vy
+    sta fairy.vy
+
 
 AddVelocities:
     lda fairy.x
