@@ -158,7 +158,7 @@ OamClearStart:
     SetupPaletteDMA 1 palette_rom 0 $a0 palette_size
 
     ; Start the transfer, bit one for channel 0
-    lda	#$01
+    lda	#%00000001
     sta	$420b
 
     ; Set OAM addresses and object priority
