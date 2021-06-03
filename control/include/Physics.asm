@@ -10,16 +10,40 @@ Physics:
     pha
     php
 
-    A16
+    AXY16
 
-    ldx #entity.0
+    lda #_sizeof_entity
+
+PhysicsLoop:
+    sec
+    sbc #_sizeof_entity.0
+
+    sta scratch.0
+
+    clc
+    adc #entity
+    sta scratch.2
+
+    tax
+
+    ; Check if the obj is active
+    ; Currently this just means flags are set
+    A8
+    lda game_obj.flags, x
+    A16
+    beq LoopCheck
+
     jsr (game_obj.update, x)
 
-    ldx #entity.0
+    ldx scratch.2
     jsr WallBounces
 
-    ldx #entity.0
+    ldx scratch.2
     jsr AddVelocities
+
+LoopCheck:
+    lda scratch.0
+    bne PhysicsLoop
 
     plp
     pla
@@ -230,7 +254,6 @@ AddVelocities:
 
     ; Bounce of walls section
 WallBounces:
-
     pha
     php
 

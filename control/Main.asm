@@ -34,6 +34,8 @@ attr    db
 ; So the words overlap with their component bytes
 ; This makes addressing the entire word or either byte very easy
 .struct game_obj
+; Currently this just acts like an active bit
+; May store more data soon
 flags   db
 x       .dw
 xl      db
@@ -66,12 +68,22 @@ update  dw
 .define p1_control_l    $0002
 .define p1_control_h    $0003
 
+.struct byte
+. db
+.endst
+
 .enum $0004
+; Scratch for local, short lived vars
+; on x86 I'd use some combination of ebp and esp for this
+; but we don't have a register for a base pointer
+; Will check if there's a better way for this
+scratch instanceof byte $10 startfrom 0
+; All of the entity information
 entity instanceof game_obj 8 startfrom 0
 .ende
 
 .enum $7e2000
-oam_buffer instanceof oam_obj 64 startfrom 0
+oam_buffer instanceof oam_obj 128 startfrom 0
 .ende
 
 VBlank:
@@ -100,8 +112,44 @@ Start:
     lda #%10000000
     sta $2100
 
+    ; Clear oam mirror
+    AXY16
+    lda #_sizeof_oam_buffer
+OamClearStart:
+    sec
+    sbc #_sizeof_oam_buffer.0
+    tax
+
+    lda #$00ff
+    sta oam_buffer + oam_obj.x, x
+    lda #$0000
+    sta oam_buffer + oam_obj.tile, x
+
+    txa
+    bne OamClearStart
+
+
+    A8
+    XY16
+    ; Clear entity table
+    ldx #_sizeof_entity
+EntityClearStart:
+    dex
+
+    lda #$00
+    sta entity, x
+
+    txa
+    bne EntityClearStart
+
+    AXY8
+
     ; Setting starting values
     stz frame_count
+
+    ; Store first fairy
+    lda #1
+    sta entity.0.flags
 
     lda #$30
     sta entity.0.xh
@@ -119,31 +167,43 @@ Start:
 
     stz entity.0.tile
 
+    ; Fairy attributes
+    lda #%01110010
+    sta entity.0.attr
+
     A16
     lda #FairyMovement
     sta entity.0.update
     A8
 
-    ; Fairy attributes
-    ; vhoopppn
-    ; v = vertical flip
-    ; h = horizontal flip
-    ; o = priority
-    ; p = palette
-    ; n = Name table (i.e. msb of tile)
-    ; Here I am setting priority, horizontal flip, palette = 1
-    lda #%01110010
-    sta entity.0.attr
+    ; Store second fairy
+    lda #1
+    sta entity.1.flags
 
-    ; Clear oam mirror
-    ; 64 objects, 4 bytes each
-    ldx #$ff
-OamClearStart:
-    dex
-    lda #0
-    sta oam_buffer,x
-    txa
-    bne OamClearStart
+    lda #$90
+    sta entity.1.xh
+    stz entity.1.xl
+
+    lda #$25
+    sta entity.1.yh
+    stz entity.1.yl
+
+    stz entity.1.vxh
+    stz entity.1.vxl
+
+    stz entity.1.vyh
+    stz entity.1.vyl
+
+    stz entity.1.tile
+
+    ; Fairy attributes
+    lda #%01110010
+    sta entity.1.attr
+
+    A16
+    lda #FairyMovement
+    sta entity.1.update
+    A8
 
     SetupVramDMA 0 sprite_fairy_rom $4000 _sizeof_sprite_fairy
     SetupPaletteDMA 1 palette_rom $90 _sizeof_palette
@@ -170,7 +230,8 @@ OamClearStart:
     ; If sprite size = 0, sprite is 8x8
     ; If sprite size = 1, sprite is 16x16
     ; Here I set sprite size = 1, msb x = 0
-    lda #$02
+    ; TODO this is important
+    lda #$0a
     sta $2104
 
     ; End FBlank, set brightness to 15 (100%)
@@ -237,6 +298,9 @@ ControllerAutoReadWait:
     rts
 
     ; Handle animations
+    ; TODO iterate through entities
+    ; TODO store animation fn per entity (like update)
+    ; TODO move this to a different file?
 Animations:
 
     ; Fairy wings animation
@@ -247,6 +311,7 @@ Animations:
     bne FlapWings
 
     stz entity.0.tile
+    stz entity.1.tile
     bra DoneAnimations
 
 FlapWings:
@@ -257,10 +322,12 @@ FlapWings:
     lsr
     lsr
     sta entity.0.tile
+    sta entity.1.tile
 
 DoneAnimations:
     rts
 
+    ; TODO iterate through entities
     ; Copy fairy position to oam mirror
 PrepareOAM:
     lda entity.0.xh
@@ -272,6 +339,13 @@ PrepareOAM:
     lda entity.0.attr
     sta oam_buffer.0.attr
 
-
+    lda entity.1.xh
+    sta oam_buffer.1.x
+    lda entity.1.yh
+    sta oam_buffer.1.y
+    lda entity.1.tile
+    sta oam_buffer.1.tile
+    lda entity.1.attr
+    sta oam_buffer.1.attr
 
     rts
