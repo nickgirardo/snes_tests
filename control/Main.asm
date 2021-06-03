@@ -33,7 +33,8 @@ attr    db
 ; NOTE the . before the dw bellow cause the position to not advance
 ; So the words overlap with their component bytes
 ; This makes addressing the entire word or either byte very easy
-.struct phys_obj
+.struct game_obj
+flags   db
 x       .dw
 xl      db
 xh      db
@@ -46,6 +47,9 @@ vxh     db
 vy      .dw
 vyl     db
 vyh     db
+tile    db
+attr    db
+update  dw
 .endst
 
 ; Memory addresses
@@ -62,11 +66,8 @@ vyh     db
 .define p1_control_l    $0002
 .define p1_control_h    $0003
 
-; This enum should be 9 bytes (phys_obj is 8, and attrs)
 .enum $0004
-fairy instanceof phys_obj
-fairy.tile db
-fairy.attr db
+entity instanceof game_obj 8 startfrom 0
 .ende
 
 .enum $7e2000
@@ -103,20 +104,25 @@ Start:
     stz frame_count
 
     lda #$30
-    sta fairy.xh
-    stz fairy.xl
+    sta entity.0.xh
+    stz entity.0.xl
 
     lda #$75
-    sta fairy.yh
-    stz fairy.yl
+    sta entity.0.yh
+    stz entity.0.yl
 
-    stz fairy.vxh
-    stz fairy.vxl
+    stz entity.0.vxh
+    stz entity.0.vxl
 
-    stz fairy.vyh
-    stz fairy.vyl
+    stz entity.0.vyh
+    stz entity.0.vyl
 
-    stz fairy.tile
+    stz entity.0.tile
+
+    A16
+    lda #FairyMovement
+    sta entity.0.update
+    A8
 
     ; Fairy attributes
     ; vhoopppn
@@ -127,7 +133,7 @@ Start:
     ; n = Name table (i.e. msb of tile)
     ; Here I am setting priority, horizontal flip, palette = 1
     lda #%01110010
-    sta fairy.attr
+    sta entity.0.attr
 
     ; Clear oam mirror
     ; 64 objects, 4 bytes each
@@ -240,7 +246,7 @@ Animations:
     and #%00001111
     bne FlapWings
 
-    stz fairy.tile
+    stz entity.0.tile
     bra DoneAnimations
 
 FlapWings:
@@ -250,20 +256,20 @@ FlapWings:
     and #%00001000
     lsr
     lsr
-    sta fairy.tile
+    sta entity.0.tile
 
 DoneAnimations:
     rts
 
     ; Copy fairy position to oam mirror
 PrepareOAM:
-    lda fairy.xh
+    lda entity.0.xh
     sta oam_buffer.0.x
-    lda fairy.yh
+    lda entity.0.yh
     sta oam_buffer.0.y
-    lda fairy.tile
+    lda entity.0.tile
     sta oam_buffer.0.tile
-    lda fairy.attr
+    lda entity.0.attr
     sta oam_buffer.0.attr
 
 
