@@ -73,6 +73,7 @@ anim    dw
 . db
 .endst
 
+.define entity_count 8
 .enum $0004
 ; Scratch for local, short lived vars
 ; on x86 I'd use some combination of ebp and esp for this
@@ -80,7 +81,7 @@ anim    dw
 ; Will check if there's a better way for this
 scratch instanceof byte $10 startfrom 0
 ; All of the entity information
-entity instanceof game_obj 8 startfrom 0
+entity instanceof game_obj entity_count startfrom 0
 .ende
 
 .enum $7e2000
@@ -306,25 +307,5 @@ ControllerAutoReadWait:
 
 .include "include/Animate.asm"
 
-    ; TODO iterate through entities
-    ; Copy fairy position to oam mirror
-PrepareOAM:
-    lda entity.0.xh
-    sta oam_buffer.0.x
-    lda entity.0.yh
-    sta oam_buffer.0.y
-    lda entity.0.tile
-    sta oam_buffer.0.tile
-    lda entity.0.attr
-    sta oam_buffer.0.attr
+.include "include/PrepareOAM.asm"
 
-    lda entity.1.xh
-    sta oam_buffer.1.x
-    lda entity.1.yh
-    sta oam_buffer.1.y
-    lda entity.1.tile
-    sta oam_buffer.1.tile
-    lda entity.1.attr
-    sta oam_buffer.1.attr
-
-    rts
