@@ -51,7 +51,8 @@ vyl     db
 vyh     db
 tile    db
 attr    db
-update  dw
+phys    dw
+anim    dw
 .endst
 
 ; Memory addresses
@@ -173,7 +174,10 @@ EntityClearStart:
 
     A16
     lda #FairyMovement
-    sta entity.0.update
+    sta entity.0.phys
+
+    lda #FairyAnimate
+    sta entity.0.anim
     A8
 
     ; Store second fairy
@@ -202,7 +206,10 @@ EntityClearStart:
 
     A16
     lda #FairyMovement
-    sta entity.1.update
+    sta entity.1.phys
+
+    lda #FairyAnimate
+    sta entity.1.anim
     A8
 
     SetupVramDMA 0 sprite_fairy_rom $4000 _sizeof_sprite_fairy
@@ -297,35 +304,7 @@ ControllerAutoReadWait:
 
     rts
 
-    ; Handle animations
-    ; TODO iterate through entities
-    ; TODO store animation fn per entity (like update)
-    ; TODO move this to a different file?
-Animations:
-
-    ; Fairy wings animation
-    ; Check if any of the arrow keys are pressed down
-    ; If not, we're done with animations
-    lda p1_control_l
-    and #%00001111
-    bne FlapWings
-
-    stz entity.0.tile
-    stz entity.1.tile
-    bra DoneAnimations
-
-FlapWings:
-    ; If we're here that means at least one arrow key is down
-    ; Flap the fiary's wings
-    lda frame_count
-    and #%00001000
-    lsr
-    lsr
-    sta entity.0.tile
-    sta entity.1.tile
-
-DoneAnimations:
-    rts
+.include "include/Animate.asm"
 
     ; TODO iterate through entities
     ; Copy fairy position to oam mirror
