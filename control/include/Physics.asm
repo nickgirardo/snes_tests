@@ -14,7 +14,7 @@ Physics:
 
     lda #_sizeof_entity
 
-PhysicsLoop:
+@PhysicsLoop:
     sec
     sbc #_sizeof_entity.0
 
@@ -31,9 +31,9 @@ PhysicsLoop:
     A8
     lda game_obj.flags, x
     A16
-    beq LoopCheck
+    beq @LoopCheck
 
-    jsr (game_obj.update, x)
+    jsr (game_obj.phys, x)
 
     ldx scratch.2
     jsr WallBounces
@@ -41,9 +41,9 @@ PhysicsLoop:
     ldx scratch.2
     jsr AddVelocities
 
-LoopCheck:
+@LoopCheck:
     lda scratch.0
-    bne PhysicsLoop
+    bne @PhysicsLoop
 
     plp
     pla
@@ -58,15 +58,15 @@ FairyMovement:
     ; Check if right is pressed
     lda p1_control_l
     and #%00000001
-    bne P1RightDown
+    bne @P1RightDown
 
     ; Check if left is pressed
     lda p1_control_l
     and #%00000010
     ; If not we're finished with XMovement
-    beq YMovement
+    beq @YMovement
 
-P1LeftDown:
+@P1LeftDown:
     ; If we have left down the fairy should face left
     ; This corresponds to hflip bit = 0
     A8
@@ -81,8 +81,8 @@ P1LeftDown:
     sbc #fairy_speed
     sta game_obj.vx, x
 
-    bra YMovement
-P1RightDown:
+    bra @YMovement
+@P1RightDown:
     ; If we have right down the fairy should face right
     ; This corresponds to hflip bit = 1
     A8
@@ -97,134 +97,134 @@ P1RightDown:
     adc #fairy_speed
     sta game_obj.vx, x
 
-YMovement:
+@YMovement:
     ; Check if down is pressed
     lda p1_control_l
     and #%00000100
-    bne P1DownDown
+    bne @P1DownDown
 
     ; Check if up is pressed
     lda p1_control_l
     and #%00001000
-    beq CalcFriction
+    beq @CalcFriction
 
-P1UpDown:
+@P1UpDown:
     lda game_obj.vy, x
     sec
     sbc #fairy_speed
     sta game_obj.vy, x
-    bra CalcFriction
-P1DownDown:
+    bra @CalcFriction
+@P1DownDown:
     lda game_obj.vy, x
     clc
     adc #fairy_speed
     sta game_obj.vy, x
 
-CalcFriction:
+@CalcFriction:
     ;Starting with x friction first
     lda game_obj.vx, x
-    bmi MovingLeft
-MovingRight:
+    bmi @MovingLeft
+@MovingRight:
     ; Check against max vel
     sec
     sbc #fairy_maxv
     ; If this is negative, we are slower than max velocity
-    bmi FrictionRight
+    bmi @FrictionRight
     ; Otherwise we cap it here
     lda #fairy_maxv
     sta game_obj.vx, x
 
-FrictionRight:
+@FrictionRight:
     ; Subtract friction constant from velocity
     lda game_obj.vx, x
     sec
     sbc #fairy_fric
     sta game_obj.vx, x
     ; If this value is still positive we are fine
-    bpl FrictionY
+    bpl @FrictionY
 
     ; Otherwise we've turned the positive value negative
     ; So we'll zero it here
     stz game_obj.vx, x
-    bra FrictionY
+    bra @FrictionY
 
-MovingLeft:
+@MovingLeft:
     ; Check against max vel
     clc
     adc #fairy_maxv
     ; If this is positive, we are slower than max velocity
-    bpl FrictionLeft
+    bpl @FrictionLeft
     ; Otherwise we cap it here
     lda #-fairy_maxv
     sta game_obj.vx, x
 
-FrictionLeft:
+@FrictionLeft:
     ; Add friction constant to velocity
     lda game_obj.vx, x
     clc
     adc #fairy_fric
     sta game_obj.vx, x
     ; If this value is still negative we are fine
-    bmi FrictionY
+    bmi @FrictionY
 
     ; Otherwise we've turned the negative value positive
     ; So we'll zero it here
     stz game_obj.vx, x
-    bra FrictionY
+    bra @FrictionY
 
     ; Done with the x friction, lets do the y friction now
-FrictionY:
+@FrictionY:
     lda game_obj.vy, x
-    bmi MovingUp
-MovingDown:
+    bmi @MovingUp
+@MovingDown:
     ; Check against max vel
     sec
     sbc #fairy_maxv
     ; If this is negative, we are slower than max velocity
-    bmi FrictionDown
+    bmi @FrictionDown
     ; Otherwise we cap it here
     lda #fairy_maxv
     sta game_obj.vy, x
 
-FrictionDown:
+@FrictionDown:
     ; Subtract friction constant from velocity
     lda game_obj.vy, x
     sec
     sbc #fairy_fric
     sta game_obj.vy, x
     ; If this value is still positive we are fine
-    bpl .doneFM
+    bpl @done
 
     ; Otherwise we've turned the positive value negative
     ; So we'll zero it here
     stz game_obj.vy, x
-    bra .doneFM
+    bra @done
 
-MovingUp:
+@MovingUp:
     ; Check against max vel
     clc
     adc #fairy_maxv
     ; If this is positive, we are slower than max velocity
-    bpl FrictionUp
+    bpl @FrictionUp
     ; Otherwise we cap it here
     lda #-fairy_maxv
     sta game_obj.vy, x
 
-FrictionUp:
+@FrictionUp:
     ; Add friction constant to velocity
     lda game_obj.vy, x
     clc
     adc #fairy_fric
     sta game_obj.vy, x
     ; If this value is still negative we are fine
-    bmi .doneFM
+    bmi @done
 
     ; Otherwise we've turned the negative value positive
     ; So we'll zero it here
     stz game_obj.vy, x
-    bra .doneFM
+    bra @done
 
-.doneFM
+@done
     plp
     pla
 
@@ -263,9 +263,9 @@ WallBounces:
     ; If we're moving left (negative) check that wall
     ; Otherwise check right
     lda game_obj.vx, x
-    bmi CheckLeftWall
+    bmi @CheckLeftWall
 
-CheckRightWall:
+@CheckRightWall:
     ; We set this check up so that if the physics object would go across the edge
     ; the carry flag will be set
     lda game_obj.x, x
@@ -275,7 +275,7 @@ CheckRightWall:
     ; Offset with width (16 pixels)
     adc #$1000
     adc game_obj.vx, x
-    bcc CheckYWalls
+    bcc @CheckYWalls
 
     ; Move game_obj object to screen edge
     lda #-$1000
@@ -286,14 +286,14 @@ CheckRightWall:
     sbc game_obj.vx, x
     sta game_obj.vx, x
 
-    bra CheckYWalls
+    bra @CheckYWalls
 
-CheckLeftWall:
+@CheckLeftWall:
     ; We set this check up so that if the physics object would go across the edge
     ; the carry flag will be clear
     lda game_obj.x, x
     adc game_obj.vx, x
-    bcs CheckYWalls
+    bcs @CheckYWalls
 
     ; Move physics object to screen edge and negate velocity
     lda #$0000
@@ -301,14 +301,14 @@ CheckLeftWall:
     sbc game_obj.vx, x
     sta game_obj.vx, x
 
-CheckYWalls:
+@CheckYWalls:
     ; Which Y Wall do we need to check?
     ; If we're moving up (negative) check that wall
     ; Otherwise check bottom
     lda game_obj.vy, x
-    bmi CheckTopWall
+    bmi @CheckTopWall
 
-CheckBottomWall:
+@CheckBottomWall:
     ; We set this check up so that if the physics object would go across the edge
     ; the carry flag will be set
     lda game_obj.y, x
@@ -319,7 +319,7 @@ CheckBottomWall:
     ; Screen is 224 pixels (shifted left because we're measuring in subpixels)
     adc #$1000 + (($100 - 224) << 8)
     adc game_obj.vy, x
-    bcc .doneWalls
+    bcc @done
 
     ; Move physics object to screen edge
     lda #-1 * ($1000 + (($100 - 224) << 8))
@@ -330,14 +330,14 @@ CheckBottomWall:
     sbc game_obj.vy, x
     sta game_obj.vy, x
 
-    bra .doneWalls
+    bra @done
 
-CheckTopWall:
+@CheckTopWall:
     ; We set this check up so that if the physics object would go across the edge
     ; the carry flag will be clear
     lda game_obj.y, x
     adc game_obj.vy, x
-    bcs .doneWalls
+    bcs @done
 
     ; Move physics object to screen edge and negate velocity
     lda #$00
@@ -346,7 +346,7 @@ CheckTopWall:
     sta game_obj.vy, x
 
     ; Finished checking all four walls, return
-.doneWalls
+@done
     plp
     pla
 
