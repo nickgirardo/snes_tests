@@ -35,12 +35,9 @@ PrepareOAM:
     ; Currently this just means flags are set
     A8
     lda game_obj.flags, x
-    A16
     beq @LoopCheck
 
     ldy #$0
-
-    A8
 
     lda game_obj.xh, x
     sta [scratch.2], y
@@ -57,6 +54,8 @@ PrepareOAM:
     A16
 
 @LoopCheck:
+    A16
+
     lda scratch.0
     bne @OAMLoop
 
