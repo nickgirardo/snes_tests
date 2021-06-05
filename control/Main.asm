@@ -213,6 +213,41 @@ EntityClearStart:
     sta entity.1.anim
     A8
 
+    ; Store spike
+    lda #1
+    sta entity.2.flags
+
+    lda #$90
+    sta entity.2.xh
+    stz entity.2.xl
+
+    lda #$25
+    sta entity.2.yh
+    stz entity.2.yl
+
+    lda #$01
+    sta entity.2.vxh
+    lda #$80
+    sta entity.2.vxl
+
+    lda #$01
+    sta entity.2.vyh
+    lda #$80
+    sta entity.2.vyl
+
+    stz entity.2.tile
+
+    lda #%01110010
+    sta entity.2.attr
+
+    A16
+    lda #EmptyMovement
+    sta entity.2.phys
+
+    lda #SpikeAnimate
+    sta entity.2.anim
+    A8
+
     SetupVramDMA 0 sprite_fairy_rom $4000 _sizeof_sprite_fairy
     SetupPaletteDMA 1 palette_rom $90 _sizeof_palette
 
@@ -239,7 +274,7 @@ EntityClearStart:
     ; If sprite size = 1, sprite is 16x16
     ; Here I set sprite size = 1, msb x = 0
     ; TODO this is important
-    lda #$0a
+    lda #$aa
     sta $2104
 
     ; End FBlank, set brightness to 15 (100%)

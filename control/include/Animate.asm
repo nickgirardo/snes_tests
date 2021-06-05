@@ -52,7 +52,6 @@ FairyAnimate:
     bne @FlapWings
 
     stz game_obj.tile, x
-    stz game_obj.tile, x
     bra @done
 
 @FlapWings:
@@ -63,9 +62,23 @@ FairyAnimate:
     lsr
     lsr
     sta game_obj.tile, x
-    sta game_obj.tile, x
 
 @done:
+    plp
+    pla
+
+    rts
+
+
+SpikeAnimate:
+    pha
+    php
+
+    A8
+
+    lda #$04
+    sta game_obj.tile, x
+
     plp
     pla
 
