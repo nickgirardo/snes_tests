@@ -32,9 +32,9 @@ PrepareOAM:
     sta scratch.2
 
     ; Check if the obj is active
-    ; Currently this just means flags are set
+    ; Currently this just means kind is not 0
     A8
-    lda game_obj.flags, x
+    lda game_obj.kind, x
     beq @LoopCheck
 
     ldy #$0

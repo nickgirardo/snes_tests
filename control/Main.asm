@@ -19,6 +19,11 @@
 .org sprite_fairy
 .incbin "bin/fairy.bin" fsize _sizeof_sprite_fairy
 
+; Entity kinds
+.define entity_empty 0
+.define entity_fairy 1
+.define entity_spike 2
+
 ; Logical structs
 
 ; Layout of information in oam
@@ -36,7 +41,7 @@ attr    db
 .struct game_obj
 ; Currently this just acts like an active bit
 ; May store more data soon
-flags   db
+kind    db
 x       .dw
 xl      db
 xh      db
@@ -53,6 +58,7 @@ tile    db
 attr    db
 phys    dw
 anim    dw
+collide dw
 .endst
 
 ; Memory addresses
@@ -153,8 +159,8 @@ EntityClearStart:
     stz frame_count
 
     ; Store first fairy
-    lda #1
-    sta entity.0.flags
+    lda #entity_fairy
+    sta entity.0.kind
 
     lda #$30
     sta entity.0.xh
@@ -182,11 +188,14 @@ EntityClearStart:
 
     lda #FairyAnimate
     sta entity.0.anim
+    
+    lda #EmptyFn
+    sta entity.0.collide
     A8
 
     ; Store second fairy
-    lda #1
-    sta entity.1.flags
+    lda #entity_fairy
+    sta entity.1.kind
 
     lda #$90
     sta entity.1.xh
@@ -214,11 +223,14 @@ EntityClearStart:
 
     lda #FairyAnimate
     sta entity.1.anim
+    
+    lda #EmptyFn
+    sta entity.1.collide
     A8
 
     ; Store spike
-    lda #1
-    sta entity.3.flags
+    lda #entity_spike
+    sta entity.3.kind
 
     lda #$90
     sta entity.3.xh
@@ -247,11 +259,14 @@ EntityClearStart:
 
     lda #SpikeAnimate
     sta entity.3.anim
+    
+    lda #EmptyFn
+    sta entity.3.collide
     A8
 
     ; Store spike
-    lda #1
-    sta entity.4.flags
+    lda #entity_spike
+    sta entity.4.kind
 
     lda #$90
     sta entity.4.xh
@@ -280,11 +295,14 @@ EntityClearStart:
 
     lda #SpikeAnimate
     sta entity.4.anim
+    
+    lda #EmptyFn
+    sta entity.4.collide
     A8
 
     ; Store spike
-    lda #1
-    sta entity.2.flags
+    lda #entity_spike
+    sta entity.2.kind
 
     lda #$90
     sta entity.2.xh
@@ -315,6 +333,9 @@ EntityClearStart:
 
     lda #SpikeAnimate
     sta entity.2.anim
+    
+    lda #EmptyFn
+    sta entity.2.collide
     A8
 
     SetupVramDMA 0 sprite_fairy_rom $4000 _sizeof_sprite_fairy

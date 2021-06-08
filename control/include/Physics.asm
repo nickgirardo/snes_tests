@@ -27,13 +27,17 @@ Physics:
     tax
 
     ; Check if the obj is active
-    ; Currently this just means flags are set
+    ; Currently this just means kind is not 0
+    ; TODO use stack to preseve x register
     A8
-    lda game_obj.flags, x
+    lda game_obj.kind, x
     A16
     beq @LoopCheck
 
     jsr (game_obj.phys, x)
+
+    ldx scratch.2
+    jsr (game_obj.collide, x)
 
     ldx scratch.2
     jsr WallBounces
