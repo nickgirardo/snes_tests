@@ -197,7 +197,7 @@ EntityClearStart:
     lda #entity_fairy
     sta entity.1.kind
 
-    lda #$90
+    lda #$60
     sta entity.1.xh
     stz entity.1.xl
 

@@ -1,4 +1,5 @@
 
+; TODO the hitboxes are way too big right now :(
 FairyCollision:
     pha
     php
@@ -88,13 +89,9 @@ FairyCollision:
 
 @CollisionFound
     ; Garbage here just as a placeholder
-    inc a
-    inc a
-    inc a
-    inc a
-    inc a
-    inc a
-    inc a
+    lda #entity_empty
+    sta (scratch.6)
+
 
 @LoopCheck:
     ; If the current index is 0 we are done
