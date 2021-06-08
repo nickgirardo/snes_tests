@@ -88,6 +88,9 @@ entity instanceof game_obj entity_count startfrom 0
 oam_buffer instanceof oam_obj 128 startfrom 0
 .ende
 
+EmptyFn:
+    rts
+
 VBlank:
     SetupOamDMA 0 oam_buffer $00 _sizeof_oam_buffer
 
@@ -101,7 +104,7 @@ VBlank:
     lda #$01
     sta vblank_done
 
-    RTI
+    rti
 
 Start:
     ; Initialize the SNES.
@@ -215,6 +218,72 @@ EntityClearStart:
 
     ; Store spike
     lda #1
+    sta entity.3.flags
+
+    lda #$90
+    sta entity.3.xh
+    stz entity.3.xl
+
+    lda #$25
+    sta entity.3.yh
+    stz entity.3.yl
+
+    lda #$01
+    sta entity.3.vxh
+    lda #$80
+    sta entity.3.vxl
+
+    stz entity.3.vyh
+    stz entity.3.vyl
+
+    stz entity.3.tile
+
+    lda #%01110010
+    sta entity.3.attr
+
+    A16
+    lda #EmptyFn
+    sta entity.3.phys
+
+    lda #SpikeAnimate
+    sta entity.3.anim
+    A8
+
+    ; Store spike
+    lda #1
+    sta entity.4.flags
+
+    lda #$90
+    sta entity.4.xh
+    stz entity.4.xl
+
+    lda #$25
+    sta entity.4.yh
+    stz entity.4.yl
+
+    stz entity.4.vxh
+    stz entity.4.vxl
+
+    lda #$01
+    sta entity.4.vyh
+    lda #$80
+    sta entity.4.vyl
+
+    stz entity.4.tile
+
+    lda #%01110010
+    sta entity.4.attr
+
+    A16
+    lda #EmptyFn
+    sta entity.4.phys
+
+    lda #SpikeAnimate
+    sta entity.4.anim
+    A8
+
+    ; Store spike
+    lda #1
     sta entity.2.flags
 
     lda #$90
@@ -241,7 +310,7 @@ EntityClearStart:
     sta entity.2.attr
 
     A16
-    lda #EmptyMovement
+    lda #EmptyFn
     sta entity.2.phys
 
     lda #SpikeAnimate

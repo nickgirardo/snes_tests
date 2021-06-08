@@ -51,9 +51,6 @@ Physics:
     rts
 
 
-EmptyMovement:
-    rts
-
 FairyMovement:
     pha
     php
