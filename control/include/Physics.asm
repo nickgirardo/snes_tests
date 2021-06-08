@@ -6,6 +6,8 @@
 ; I may revisit this later but I don't think it's necessary
 .define fairy_fric  $18
 
+.include "include/FairyCollision.asm"
+
 Physics:
     pha
     php
@@ -355,3 +357,4 @@ WallBounces:
     pla
 
     rts
+

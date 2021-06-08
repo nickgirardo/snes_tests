@@ -189,7 +189,7 @@ EntityClearStart:
     lda #FairyAnimate
     sta entity.0.anim
     
-    lda #EmptyFn
+    lda #FairyCollision
     sta entity.0.collide
     A8
 
@@ -224,7 +224,7 @@ EntityClearStart:
     lda #FairyAnimate
     sta entity.1.anim
     
-    lda #EmptyFn
+    lda #FairyCollision
     sta entity.1.collide
     A8
 
@@ -365,6 +365,8 @@ EntityClearStart:
     ; Here I set sprite size = 1, msb x = 0
     ; TODO this is important
     lda #$aa
+    sta $2104
+    lda #$02
     sta $2104
 
     ; End FBlank, set brightness to 15 (100%)
