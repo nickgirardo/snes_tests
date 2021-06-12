@@ -8,7 +8,6 @@
 .define fairy_hurtbox_width     $0400
 .define fairy_hurtbox_height    $0400
 
-; TODO the hitboxes are way too big right now :(
 FairyCollision:
     pha
     php
