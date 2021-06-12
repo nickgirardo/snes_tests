@@ -1,4 +1,13 @@
 
+; The fairy is $1000 subpixels large
+; This sets it so only the middle $0400 subpixels have collision
+; The hurtbox could probably be moved up as the sprite has empty space bellow
+; but this is fine for now
+.define fairy_hurtbox_offset_x  $0600
+.define fairy_hurtbox_offset_y  $0600
+.define fairy_hurtbox_width     $0400
+.define fairy_hurtbox_height    $0400
+
 ; TODO the hitboxes are way too big right now :(
 FairyCollision:
     pha
@@ -39,15 +48,16 @@ FairyCollision:
     ; All objects in the game are 16x16 pixels large
 @XCheck
     ldy #game_obj.x
-    lda (scratch.6), y
+    lda (scratch.2), y
+    adc #fairy_hurtbox_offset_x
     sec
-    sbc (scratch.2), y
+    sbc (scratch.6), y
 
     bcs @PositiveResultX
 
     ; Result is negative
-    ; Check if it is greater than -$1000
-    adc #$1000
+    ; Check if it is greater than the fairy's hurtbox's width
+    adc #fairy_hurtbox_width
     ; If the carry is still clear, no collision
     bcc @LoopCheck
 
@@ -64,15 +74,16 @@ FairyCollision:
 
 @YCheck
     ldy #game_obj.y
-    lda (scratch.6), y
+    lda (scratch.2), y
+    adc #fairy_hurtbox_offset_y
     sec
-    sbc (scratch.2), y
+    sbc (scratch.6), y
 
     bcs @PositiveResultY
 
     ; Result is negative
-    ; Check if it is greater than -$1000
-    adc #$1000
+    ; Check if it is greater than the fairy's hurtbox's height
+    adc #fairy_hurtbox_height
     ; If the carry is still clear, no collision
     bcc @LoopCheck
 
