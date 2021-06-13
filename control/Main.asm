@@ -193,11 +193,11 @@ EntityClearStart:
     sta entity.0.collide
     A8
 
-    ; Store second fairy
-    lda #entity_fairy
+    ; Store spike
+    lda #entity_spike
     sta entity.1.kind
 
-    lda #$60
+    lda #$90
     sta entity.1.xh
     stz entity.1.xl
 
@@ -208,96 +208,25 @@ EntityClearStart:
     stz entity.1.vxh
     stz entity.1.vxl
 
-    stz entity.1.vyh
-    stz entity.1.vyl
+    lda #$01
+    sta entity.1.vyh
+    lda #$80
+    sta entity.1.vyl
 
     stz entity.1.tile
 
-    ; Fairy attributes
     lda #%01110010
     sta entity.1.attr
 
     A16
-    lda #FairyMovement
+    lda #EmptyFn
     sta entity.1.phys
 
-    lda #FairyAnimate
+    lda #SpikeAnimate
     sta entity.1.anim
     
-    lda #FairyCollision
+    lda #EmptyFn
     sta entity.1.collide
-    A8
-
-    ; Store spike
-    lda #entity_spike
-    sta entity.3.kind
-
-    lda #$90
-    sta entity.3.xh
-    stz entity.3.xl
-
-    lda #$25
-    sta entity.3.yh
-    stz entity.3.yl
-
-    lda #$01
-    sta entity.3.vxh
-    lda #$80
-    sta entity.3.vxl
-
-    stz entity.3.vyh
-    stz entity.3.vyl
-
-    stz entity.3.tile
-
-    lda #%01110010
-    sta entity.3.attr
-
-    A16
-    lda #EmptyFn
-    sta entity.3.phys
-
-    lda #SpikeAnimate
-    sta entity.3.anim
-    
-    lda #EmptyFn
-    sta entity.3.collide
-    A8
-
-    ; Store spike
-    lda #entity_spike
-    sta entity.4.kind
-
-    lda #$90
-    sta entity.4.xh
-    stz entity.4.xl
-
-    lda #$25
-    sta entity.4.yh
-    stz entity.4.yl
-
-    stz entity.4.vxh
-    stz entity.4.vxl
-
-    lda #$01
-    sta entity.4.vyh
-    lda #$80
-    sta entity.4.vyl
-
-    stz entity.4.tile
-
-    lda #%01110010
-    sta entity.4.attr
-
-    A16
-    lda #EmptyFn
-    sta entity.4.phys
-
-    lda #SpikeAnimate
-    sta entity.4.anim
-    
-    lda #EmptyFn
-    sta entity.4.collide
     A8
 
     ; Store spike
@@ -336,6 +265,42 @@ EntityClearStart:
     
     lda #EmptyFn
     sta entity.2.collide
+    A8
+
+    ; Store spike
+    lda #entity_spike
+    sta entity.3.kind
+
+    lda #$90
+    sta entity.3.xh
+    stz entity.3.xl
+
+    lda #$25
+    sta entity.3.yh
+    stz entity.3.yl
+
+    lda #$01
+    sta entity.3.vxh
+    lda #$80
+    sta entity.3.vxl
+
+    stz entity.3.vyh
+    stz entity.3.vyl
+
+    stz entity.3.tile
+
+    lda #%01110010
+    sta entity.3.attr
+
+    A16
+    lda #EmptyFn
+    sta entity.3.phys
+
+    lda #SpikeAnimate
+    sta entity.3.anim
+    
+    lda #EmptyFn
+    sta entity.3.collide
     A8
 
     SetupVramDMA 0 sprite_fairy_rom $4000 _sizeof_sprite_fairy
