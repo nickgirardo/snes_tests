@@ -3,6 +3,7 @@
 ; This sets it so only the middle $0400 subpixels have collision
 ; The hurtbox could probably be moved up as the sprite has empty space bellow
 ; but this is fine for now
+; TODO these probably need to be tweaked
 .define fairy_hurtbox_offset_x  $0600
 .define fairy_hurtbox_offset_y  $0600
 .define fairy_hurtbox_width     $0400
