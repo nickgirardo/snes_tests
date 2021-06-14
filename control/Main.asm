@@ -303,6 +303,40 @@ EntityClearStart:
     sta entity.3.collide
     A8
 
+    ; Store homing spike
+    lda #entity_spike
+    sta entity.4.kind
+
+    lda #$90
+    sta entity.4.xh
+    stz entity.4.xl
+
+    lda #$25
+    sta entity.4.yh
+    stz entity.4.yl
+
+    stz entity.4.vxh
+    stz entity.4.vxl
+
+    stz entity.4.vyh
+    stz entity.4.vyl
+
+    stz entity.4.tile
+
+    lda #%01110010
+    sta entity.4.attr
+
+    A16
+    lda #HomingMovement
+    sta entity.4.phys
+
+    lda #SpikeAnimate
+    sta entity.4.anim
+
+    lda #EmptyFn
+    sta entity.4.collide
+    A8
+
     SetupVramDMA 0 sprite_fairy_rom $4000 _sizeof_sprite_fairy
     SetupPaletteDMA 1 palette_rom $90 _sizeof_palette
 
