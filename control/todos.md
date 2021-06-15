@@ -27,7 +27,6 @@ Visuals
     - TODO check technical feasibility
 
 Gameplay
-- Chaser enemy
 - Spawn score pickups
 - Randomly spawn enemies
 - Game over on collision
