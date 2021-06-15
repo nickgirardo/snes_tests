@@ -1,3 +1,4 @@
+.include "include/Physics/Friction.asm"
 .include "include/Physics/FairyCollision.asm"
 .include "include/Physics/FairyMovement.asm"
 .include "include/Physics/HomingMovement.asm"
