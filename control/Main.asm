@@ -10,6 +10,8 @@ Start:
     ; Initialize the SNES.
     Snes_Init
 
+    ; Application specific initialization stuff
+    ; Could maybe be merged with the above file
     jsr Setup
 
     ; Loop forever.

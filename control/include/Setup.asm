@@ -1,13 +1,18 @@
-; Entity kinds
+; Entity kinds for initialization
+; These differ from the entity types used elsewhere as many of these types
+; can map to the same entity type
+; For instance, entity_init_spike and entity_init_homing both produce entitys
+; with type entity_spike, however the associated functions differ
 .define entity_init_empty   0
 .define entity_init_fairy   1
 .define entity_init_spike   2
 .define entity_init_homing  3
 
-; slot kind x y vx vy attrs
+; Initialize an entity
+; KIND should be one of the entity initialization types defined above
 .macro InitEntity args SLOT KIND X Y VX VY ATTR
-
-    ; .define BASE 
+    pha
+    php
 
     stz SLOT + game_obj.tile
 
@@ -22,11 +27,9 @@
     lda #Y
     sta SLOT + game_obj.y
 
-    .print "vx:    ", HEX (SLOT + game_obj.vx), " ", HEX VX, "\n"
     lda #VX
     sta SLOT + game_obj.vy
 
-    .print "vy:    ", HEX (SLOT + game_obj.vy), " ", HEX VX, "\n"
     lda #VY
     sta SLOT + game_obj.vy
 
@@ -37,6 +40,7 @@
     lda #entity_empty
     sta SLOT + game_obj.kind
 .endif
+
 .if KIND == entity_init_fairy
     lda #FairyMovement
     sta SLOT + game_obj.phys
@@ -83,6 +87,8 @@
     sta SLOT + game_obj.kind
 .endif
 
+    plp
+    pla
 .endm
 
 Setup:
