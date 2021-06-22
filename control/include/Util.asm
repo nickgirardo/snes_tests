@@ -1,3 +1,6 @@
+EmptyFn:
+    rts
+
 ; The following 6 macros are shorthand to control reigster size
 .macro A16
     rep #$20
