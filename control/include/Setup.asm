@@ -28,7 +28,7 @@
     sta SLOT + game_obj.y
 
     lda #VX
-    sta SLOT + game_obj.vy
+    sta SLOT + game_obj.vx
 
     lda #VY
     sta SLOT + game_obj.vy
@@ -139,9 +139,10 @@ Setup:
     ; slot kind x y vx vy attrs
     InitEntity entity.0 entity_init_fairy $3000 $7500 $0000 $0000 %01110010
     InitEntity entity.1 entity_init_spike $9000 $2500 $0180 $0000 %01110010
-    InitEntity entity.2 entity_init_spike $9000 $2500 $0180 $0180 %01110010
-    InitEntity entity.3 entity_init_spike $9000 $2500 $0000 $0180 %01110010
+    InitEntity entity.2 entity_init_spike $5000 $2500 $0180 $0180 %01110010
+    InitEntity entity.3 entity_init_spike $9000 $7500 $0000 $0180 %01110010
     InitEntity entity.4 entity_init_homing $9000 $9500 $0000 $0000 %01110010
+    ; InitEntity entity.4 entity_init_homing $b000 $9500 $0000 $0000 %01110010
 
     SetupVramDMA 0 sprite_fairy_rom $4000 _sizeof_sprite_fairy
     SetupPaletteDMA 1 palette_rom $90 _sizeof_palette
